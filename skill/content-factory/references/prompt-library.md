@@ -1,68 +1,64 @@
 # Prompt library — concept seeds, hook scenes, settings, style cues
 
-Model-agnostic creative scaffolding for the 5 UGC formats. Pull from here in
-Stage 1 (idea generation) and Stage 3 (prompt building) so no two videos in the
-same format share a concept. These are **prompt ideas**, not API presets — feed
-them into KIE model prompts.
-
-> Adapted from Anthropic's `higgsfield-content-factory` creative material. The
-> Higgsfield-specific mechanics (preset slugs, hook/setting UUIDs, avatars) are
-> intentionally dropped — only the reusable concept language is kept.
+Model-agnostic creative scaffolding for the 5 UGC formats — a compilation of
+common short-form ad tropes. Pull from here in Stage 1 (idea generation) and
+Stage 3 (prompt building) so no two videos in the same format share a concept.
+These are **prompt ideas**, not API presets — feed them into KIE model prompts.
 
 ---
 
 ## Format 1 — UGC Entertainment
-Challenge / dare / entertainment-first. Product is the punchline, not the subject. Audio on.
+Challenge / dare / entertainment-first. The product is the punchline, not the subject. Audio on.
 
 **Concept seeds:**
-- Blind taste try — "guess which one is [brand]"
-- "I'll give you $100 if you try it" street challenge
-- "Will it pour?" — pour the product onto something absurd
-- Product flies into frame → deadpan reaction
-- Failed dare → recover → pivot to a quick review
-- Epic-fail stumble → land badly → unbothered product hold
+- Blind pick — line up look-alikes and guess which one is the brand
+- Bribe-to-try — offer a stranger cash to taste/use it on the spot
+- Absurd stress test — put the product through a ridiculous "does it survive?" moment
+- Product launches into frame → straight-faced reaction
+- Botched dare → shrug it off → cut to a quick verdict
+- Pratfall bit → clumsy landing → product held perfectly intact
 
-**Scene/hook flavor:** product hit, product dodge, near-miss crash, random-object mic, epic fail, camera bump.
-**Style cue:** energetic, handheld, natural daylight, fast cut-in, real-person energy.
+**Scene/hook flavor:** impact moment, dodge, near-miss, mic-to-a-random-object, comedic fail, jolt of the camera.
+**Style cue:** high-energy, handheld, natural daylight, quick cut-in, real-person feel.
 
 ## Format 2 — Street Interview
-Sidewalk stranger interviews, product appears mid-conversation. High-trust "real people". Setting: street. Audio on.
+Sidewalk stranger interviews; the product appears mid-conversation. "Real people" trust. Setting: street. Audio on.
 
 **Concept seeds:**
-- "What's your favorite [niche] right now?" → stranger pulls the product from a bag
-- "Sing for the product" — sing a jingle, get the bottle
-- "Rate this out of 10" — sip, then score
-- "Try this on a hot day" → first-sip face from a real stranger
-- "Trade me your coffee for this" — bartering bit
-- Two strangers, blind opinion → brand reveal
+- "What are you into in [niche] lately?" → they pull the product out of a bag
+- Perform-for-it — do a small bit, earn the product
+- On-the-spot score — try it, then rate it out of ten
+- Hot-day handoff — offer it to a passerby, catch the first reaction
+- Swap bit — trade them something for their current drink/item
+- Two strangers give blind takes → reveal the brand after
 
-**Scene/hook flavor:** interview framing, mic-in-frame, candid sidewalk.
-**Style cue:** documentary handheld, street ambient, natural light, authentic phone-quality.
+**Scene/hook flavor:** interview framing, mic in shot, candid sidewalk.
+**Style cue:** documentary handheld, street ambience, natural light, authentic phone quality.
 
 ## Format 3 — Unboxing
 Premium reveal energy — hands, packaging, the moment of discovery. Audio on (ASMR-leaning).
 
 **Concept seeds:**
-- Trio reveal — three flavors/variants nestled in pastel paper
-- Single-item solo drop with slow ribbon-pull
-- Subscription box with a hand-written brand note
-- Premium gift-set unbox, ribbon-tied, hangtag macro
-- Hangtag close-up series — tags swinging
-- Crate / "picked today" reveal
+- Variant trio nestled in soft tissue, opened one by one
+- Single item, slow ribbon-pull reveal
+- Subscription box with a hand-written note
+- Gift set, ribbon-tied, close macro on the tag
+- Tag/label detail series in tight close-up
+- Rustic crate or "just picked" reveal
 
 **Style cue:** close-up hands, tactile packaging, soft key light, slow reveal, crinkle/ribbon sound.
 
 ## Format 4 — Product Review
 Honest talking-head — product in hand, ingredients read aloud, rankings, comparisons. Audio on.
-(For real lip-synced talking, route to Veo 3.1; otherwise keep it non-verbal + caption.)
+(For real lip-synced talking, route to Veo; otherwise keep it non-verbal + caption.)
 
 **Concept seeds:**
-- Two-ingredient test — read the label, raise eyebrow, sip
-- "Cold side of the fridge" ranking — "always [flavor], don't @ me"
-- Side-by-side — generic competitor vs the hero product
-- 7-day diary — empty bottles on the counter, "I tried this for a week"
-- Beauty-editor mirror review (bathroom, close mirror)
-- Final flavor ranking — all variants lined up, ranked on camera
+- Label read — check the ingredients on camera, react, taste
+- Opinionated ranking — "this one's my pick, fight me"
+- Head-to-head against a generic alternative
+- Multi-day diary — a row of empties, "used it all week"
+- Mirror review in a bathroom, close and casual
+- Line up every variant and rank them on camera
 
 **Style cue:** talking-head medium shot, product held to camera, honest tone, soft room light.
 
@@ -70,14 +66,14 @@ Honest talking-head — product in hand, ingredients read aloud, rankings, compa
 Sound-led close-ups. No VO, caption-only. `generate_audio:true`. Intimate settings only (kitchen/bathroom/bedroom).
 
 **Concept seeds:**
-- Macro cap-unscrew + glug pour into an iced glass
-- Condensation-bead slide on a chilled bottle, then open
-- Spoon-clink + ice-drop into a tall glass, product pouring in
-- Bottle-on-marble tap-and-rotate with audible shifts
-- Ribbon-pull / paper rustle (crossover with Unboxing)
-- Two bottles clinking gently, no soundtrack
+- Macro cap-unscrew + pour into an iced glass
+- Condensation bead sliding down a chilled bottle, then the open
+- Ice drop + spoon clink as the product pours in
+- Tap-and-rotate on a hard surface, audible shifts
+- Paper/ribbon rustle (crossover with Unboxing)
+- Two bottles clinking softly, no music bed
 
-**Style cue:** extreme close-up, shallow depth, no music, audible product handling, condensation, glass clinks.
+**Style cue:** extreme close-up, shallow depth, no music, audible handling, condensation, glass clinks.
 
 ---
 
@@ -87,11 +83,11 @@ Sound-led close-ups. No VO, caption-only. `generate_audio:true`. Intimate settin
 
 ## Product-category → format emphasis
 Not every format fits every product — weight the mix toward what fits, redistributing
-excluded shares back into `ugc`/review first.
+excluded shares back into UGC/review first.
 
 | Category | Lean into |
 |---|---|
-| Single-SKU beverage | Entertainment · Review · ASMR (+ Hyper Motion / TV Spot if cinematic requested) |
+| Single-SKU beverage | Entertainment · Review · ASMR (+ cinematic formats if requested) |
 | Beverage with recipe angle | + Tutorial |
 | Multi-SKU / gift box | + Unboxing |
 | Food (snack/bar/sauce) | Entertainment · Review · ASMR · Tutorial |
@@ -110,9 +106,9 @@ Negative: no text overlay, no captions, no subtitles, no watermark, no lower-thi
 no on-screen typography. Clean image only.
 ```
 
-## Optional — live Higgsfield refs (off by default)
-If the user has a **Higgsfield MCP connected** and explicitly wants it, you may query
-its live presets/hooks/settings for extra reference variety, then translate the
-returned ideas into KIE prompts using the template above. This is a reference-only
-enrichment — generation still happens on KIE. Never require Higgsfield; this library
-is the default source.
+## Optional — pull refs from an external MCP (off by default)
+If you have another content/reference MCP connected (e.g. a marketing-studio tool you
+already use) and explicitly want it, you may query it for extra idea variety, then
+translate what it returns into KIE prompts using the template above. Reference-only —
+generation still happens on KIE. This library is the default source; never require an
+external MCP.

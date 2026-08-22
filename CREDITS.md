@@ -11,16 +11,14 @@
 - `skill/generate-anything/SKILL.md` — the **generate-anything** skill by Anthropic,
   which drives the connector's tools. Used per Anthropic's terms.
 
-## Pipeline skills (original, adapted)
+## Pipeline skills
 
 - `skill/content-factory/SKILL.md` — by [@yasdelayu](https://github.com/yasdelayu), MIT.
-  A KIE-native rewrite; the 5-stage campaign structure is adapted from Anthropic's
-  `higgsfield-content-factory` skill (all Higgsfield/Marketing-Studio mechanics replaced
-  with KIE models + the connector's tools).
-- `skill/youtube-factory/SKILL.md` — by @yasdelayu, MIT. Workflow adapted from the
-  "Claude + YouTube" method taught at [razgon.school](https://razgon.school/materials/ClaudeYouTube)
-  (NexLev / vidIQ research → script → visuals → voiceover → assembly), re-implemented on KIE.
-  Uses third-party NexLev / vidIQ MCPs when connected — those are not part of this kit.
+  An original KIE-native UGC campaign pipeline (research → plan → generate → schedule → cost report),
+  built entirely on the connector's tools.
+- `skill/youtube-factory/SKILL.md` — by @yasdelayu, MIT. An original KIE-native faceless-video
+  pipeline (research → script → visuals → voiceover → assembly). Uses third-party NexLev / vidIQ
+  MCPs for research when connected — those are not part of this kit.
 
 ## Third parties
 

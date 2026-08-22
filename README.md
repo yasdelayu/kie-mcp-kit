@@ -270,7 +270,7 @@ rm -rf ~/.claude/skills/{generate-anything,content-factory,youtube-factory}
 
 - 🔌 **Connector** — [@yasdelayu](https://github.com/yasdelayu), an original 5-tool MCP implementation over the [KIE.ai API](https://docs.kie.ai). MIT.
 - 🧠 **generate-anything** skill — Anthropic.
-- 🏭 **content-factory** / 📺 **youtube-factory** — by @yasdelayu (MIT); pipeline designs adapted from Anthropic's `higgsfield-content-factory` skill and the [razgon.school](https://razgon.school/materials/ClaudeYouTube) "Claude + YouTube" method, re-implemented on KIE.
+- 🏭 **content-factory** / 📺 **youtube-factory** — by @yasdelayu (MIT). Original KIE-native content pipelines.
 - **[KIE.ai](https://kie.ai)** — the third-party model aggregator the connector talks to (not affiliated). NexLev / vidIQ are third-party MCPs used only when you connect them.
 
 See [CREDITS.md](CREDITS.md). License — [MIT](LICENSE).

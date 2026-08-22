@@ -88,7 +88,7 @@ add them on explicit request.
 > patterns and the category→format map from
 > [references/prompt-library.md](references/prompt-library.md) — in Stage 1 (to vary
 > the 15+ ideas) and Stage 3 (to build each prompt). It's the default reference;
-> a live Higgsfield MCP is an optional extra source, off by default (see the library).
+> an external content/reference MCP is an optional extra source, off by default (see the library).
 
 ---
 

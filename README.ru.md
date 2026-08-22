@@ -270,7 +270,7 @@ rm -rf ~/.claude/skills/{generate-anything,content-factory,youtube-factory}
 
 - 🔌 **Коннектор** — [@yasdelayu](https://github.com/yasdelayu), собственная реализация 5-тулзового MCP поверх [KIE.ai API](https://docs.kie.ai). MIT.
 - 🧠 **generate-anything** — Anthropic.
-- 🏭 **content-factory** / 📺 **youtube-factory** — [@yasdelayu](https://github.com/yasdelayu) (MIT); дизайн пайплайнов адаптирован из скилла Anthropic `higgsfield-content-factory` и метода [razgon.school](https://razgon.school/materials/ClaudeYouTube) «Claude + YouTube», переписан под KIE.
+- 🏭 **content-factory** / 📺 **youtube-factory** — [@yasdelayu](https://github.com/yasdelayu) (MIT). Собственные KIE-нативные контент-пайплайны.
 - **[KIE.ai](https://kie.ai)** — сторонний агрегатор моделей, к которому подключается коннектор (не аффилирован). NexLev / vidIQ — сторонние MCP, используются только если ты их подключишь.
 
 Подробнее — [CREDITS.md](CREDITS.md). Лицензия — [MIT](LICENSE).
