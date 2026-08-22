@@ -24,7 +24,7 @@
 
 - **[KIE.ai](https://kie.ai)** — the model aggregator the connector talks to over its
   public HTTP API. Not affiliated with this kit.
-- The underlying models (Seedance, Kling, Veo, Sora 2, GPT-Image, Suno, ElevenLabs, …)
+- The underlying models (Seedance, Kling, Veo, GPT-Image, Suno, ElevenLabs, …)
   belong to their respective vendors.
 
 This kit is not endorsed by Anthropic or KIE.ai.
