@@ -206,6 +206,12 @@ def models_index() -> str:
     return r.text if r.ok else "Browse https://docs.kie.ai/market/quickstart for the model list."
 
 
+@mcp.resource("kie://models/_index")
+def models_index_alias() -> str:
+    """Alias of kie://models for skills that reference the older _index path."""
+    return models_index()
+
+
 # --- self-check (no network): `uv run kie_server.py --selftest` -------------
 def _selftest() -> None:
     assert _abs_url("/api/v1/jobs/createTask") == f"{BASE_URL}/api/v1/jobs/createTask"
