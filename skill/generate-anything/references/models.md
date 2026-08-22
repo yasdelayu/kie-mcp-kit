@@ -1,109 +1,151 @@
 # KIE model knowledge — how each model actually works
 
-Practical cheatsheet compiled from the live KIE docs. **Read the row for the model
-you're about to call**, then confirm the exact payload with `kie_fetch_model_docs`
-(specs drift). This exists so you never guess a model's behaviour.
+Compiled from the live KIE docs (120 media models). **Find the row for the model
+you're calling, then confirm the exact payload with `kie_fetch_model_docs`** — this
+guide carries the non-obvious knowledge (which mode, how to feed a reference,
+multishot, special features) that an OpenAPI spec alone won't tell you.
 
 Reachable from any client via `kie_workflow_file("generate-anything", "references/models.md")`.
+The full slug list is at the bottom — you can call **any** of them, not just the ones with notes.
 
 ---
 
-## The three rules that were being broken
+## The rules
 
-1. **A reference means reference-mode — never text-to-X.** If the user attached or
-   named a photo of a **product** or a **character**, you MUST route it into that
-   model's reference input (below), not describe it in a text-to-image/video prompt.
-   Upload local files with `kie_upload_file` first, then pass the returned URL.
-2. **Don't chop what the model does in one shot.** Seedance and Veo hold **multiple
-   cuts inside one generation** (storyboard prompting). Don't render "4 clips of 4s
-   and edit later" for a job one 10s multishot generation does natively.
-3. **Faces policy.** Product refs → always fine. A *style / archetype* (a cowboy
-   monkey, a "Y2K girl" look) → fine, generate an **original** character in that
-   aesthetic. A **real, recognizable third party's face** without consent → do NOT
-   reproduce it (right-of-publicity / deepfake); take the aesthetic, not the face.
-   Refuse toxic pairings outright (e.g. an intimate/adult product staged in a
-   child's room). Don't over-refuse: only the recognizable-real-face case is off.
-
----
-
-## Video
-
-### Seedance 2.0 — the workhorse (text→video, image→video, reference→video)
-- **Slugs:** `bytedance/seedance-2` (full: up to **1080p/4K**, multishot is its headline) · `bytedance/seedance-2-mini` (480p/720p, cheaper). Standard `createTask`/`recordInfo`.
-- **Duration:** integer **4–15s, one file** (default 5). 10s = one generation, not four clips.
-- **Aspect:** 1:1 · 4:3 · 3:4 · 16:9 · 9:16 · 21:9 · adaptive. **Audio:** native, `generate_audio` (default **true**; set **false** when you'll add your own track).
-- **Three INPUT MODES — mutually exclusive, pick one per call:**
-  1. `first_frame_url` — start from this exact image (i2v).
-  2. `first_frame_url` + `last_frame_url` — interpolate between two exact keyframes.
-  3. `reference_image_urls` (array, up to 9) + optional `reference_video_urls` (≤3, copy motion) + `reference_audio_urls` (≤3) — **this is how you feed a character/product/style ref.** You cannot also pass a first_frame in the same call.
-- **Multishot:** YES. Declare the structure, then number shots in the prompt:
-  `"Total 15s, 6 shots, 9:16. Shot 1: … Shot 2: …"` (full model) or timestamp bands
-  `"0–3s wide … 3–6s medium …"`. Keep the SAME reference image across shots to hold identity. Best at 10–15s; at 4–5s keep one subject / one action / one camera move.
-- **Prompt recipe:** Subject → Action → Environment → Camera → Light/Style → Constraints, ~60–100 words. One camera move per shot (dolly-in, orbit, tracking, crane, rack-focus); never stack conflicting moves. For i2v/refs, **don't re-describe looks** (the image supplies them) — spend words on motion; add "preserve design and colors".
-
-### Kling v2.1 / v2.5 — clean single shots, NOT multishot
-- **Slugs (per mode/tier):** `kling/v2-5-turbo-text-to-video-pro`, `kling/v2-5-turbo-image-to-video-pro`, `kling/v2-1-master-text-to-video`, plus `ai-avatar-*`. ~1080p (Pro/Master). Standard `createTask`.
-- **Duration:** `"5"` or `"10"` seconds (string). Avatar models: length = the driving audio (≤5 min).
-- **Reference:** exactly **ONE** still via `input.image_url` (becomes the first frame). **No multi-image ref, no identity token, no "elements".** For a product/character, that single image is your only anchor.
-- **Multishot:** **No** — one prompt = one continuous shot. Hard cuts inside a prompt are unreliable. **Audio:** silent (except `ai-avatar-*`, which lip-syncs to `input.audio_url`).
-- **Use when:** you want one polished 5/10s beat, cleaner motion than Seedance, and don't need cuts or multi-ref.
-
-### Veo 3.1 — cinematic, dialogue-friendly, timestamp multishot
-- **Non-standard envelope:** `model` = `veo3` (Quality) / `veo3_fast` (default) / `veo3_lite`; submit `POST /api/v1/veo/generate`, poll `GET /api/v1/veo/record-info`, `successFlag` 0/1/2/3, `data.resultUrls` is a **JSON-encoded string** (parse it). Fetch its docs before first use.
-- **Duration:** 4 / 6 / 8s (default 8; REFERENCE mode forced to 8). >8s → Extend endpoint. **Res:** 720p/1080p/4K, 16:9 or true-vertical 9:16.
-- **Reference:** one param `imageUrls` (array); the **mode** decides meaning — first-frame (1 img), first+last (2 imgs), or **REFERENCE_2_VIDEO** (1–3 "ingredient" images for character/product). With references, **describe interactions/actions, not appearance** (the images define looks) — this is what holds consistency.
-- **Multishot:** YES via **timestamp prompting**: `[00:00-00:02] shot … [00:02-00:04] reverse … [00:06-00:08] wide crane`. **Audio:** native (dialogue in "quotes", SFX by description) — no on/off param, drive it in the prompt.
-- **Use when:** you need real dialogue/lip-sync feel, cinematic register, or precise beat timing. Route talking-head UGC here rather than forcing Seedance.
+1. **A reference means reference-mode — never text-to-X.** A user's **product** or
+   **character** photo goes into that model's reference input (columns below).
+   Upload local files with `kie_upload_file` first. Never describe a supplied
+   product/face in a text-only prompt.
+2. **Don't chop what one generation does.** Seedance 2.5, Kling 3.0, Veo, Wan 2.6,
+   PixVerse and others hold **multiple cuts in one render** — storyboard in the
+   prompt, don't render "N clips and edit later".
+3. **Faces & content.** Product refs and *style/archetype* looks are fine (generate
+   an **original** character). Do NOT reproduce a real, recognizable third party's
+   face without consent. Refuse toxic pairings. Several models expose a **`spicy` /
+   NSFW** path — treat adult generation as the user's responsibility under KIE's and
+   the destination platform's rules; never apply it to a real person, and note that
+   `nsfw_checker:false` only disables KIE's filter layer, it is not an "adult unlock".
 
 ---
 
-## Image
+## VIDEO — pick by capability
 
-### GPT-Image-2 — default image + product-consistent edits
-- **Slugs:** `gpt-image-2-text-to-image` (prompt only) · `gpt-image-2-image-to-image` (**refs**). Standard `createTask`.
-- **Reference/product:** i2i takes `input.input_urls` — a JSON array of **up to 16** image URLs; for i2i **both** `prompt` and `input_urls` are required. The images *are* the reference (no separate mask/subject param). Say *"use the provided product image exactly, do not redraw."*
-- **Res/aspect:** `resolution` 1K/2K/4K — **2K/4K need an explicit non-1:1 `aspect_ratio`** (auto/1:1 fall back to 1K). Aspects incl. 9:16, 16:9, 3:4, 2:3, 2:1…
-- **No multishot** (single still). A "storyboard look" = one image with panels, described in the prompt. Transient 500s: just resubmit (failed submit costs 0).
+| Model | slug | dur | max res | character/product ref | multishot | audio |
+|---|---|---|---|---|---|---|
+| **Seedance 2.5** ⭐ | `bytedance/seedance-2-5` | 4–30s | 1080p | `reference_image_urls` ≤30 (+video≤10, +audio≤10) | **YES, native** to 30s | native (`generate_audio` def true) |
+| Seedance 2.0 (full) | `bytedance/seedance-2` | 4–15s | 1080p+ | `reference_image_urls` ≤9 | YES | native |
+| Seedance 2.0 Fast | `bytedance/seedance-2-fast` | 4–15s | 720p | `reference_image_urls` ≤9 | limited | native |
+| Seedance 2.0 Mini | `bytedance/seedance-2-mini` | 4–15s | 720p | `reference_image_urls` ≤9 | YES | native |
+| Seedance 1.5 Pro | `bytedance/seedance-1.5-pro` | 4–12s | — | `input_urls` 0–2 only | no | opt-in (def false); **only tier with `fixed_lens`** (lock camera) |
+| **Kling 3.0 Omni R2V** ⭐ | `kling-3.0-omni/reference-to-video` | 3–15s | 1080p | `elements[]`/`image_urls[]` — richest ref matrix | YES (`customize_multi_shots`+`multi_prompt` ≤6) | native |
+| Kling 3.0 (legacy) | `kling-3.0/video` | 3–15s | 1080p | `kling_elements[]` ≤3 | YES (`multi_shots`+`multi_prompt` ≤5) | `sound` bool |
+| Kling 2.6 | `kling-2.6/text-to-video`, `…/image-to-video` | 5/10s | 1080p | i2v: `image_urls` ≤1 (first frame) | no | native + dialogue |
+| Kling 2.5 Turbo | `kling/v2-5-turbo-{text,image}-to-video-pro` | 5/10s | ~1080p | i2v: `image_url` ×1 | no | silent |
+| Kling 2.1 | `kling/v2-1-master-image-to-video`, `…/v2-1-standard` | 5/10s | ~1080p | `image_url` ×1 (+`cfg_scale`,`negative_prompt`) | no | silent |
+| **Veo 3.1** | `veo3`/`veo3_fast`/`veo3_lite` (`/api/v1/veo/generate`) | 4/6/8s | 4K | `imageUrls` REFERENCE_2_VIDEO 1–3 | YES (timestamp `[00:00-00:02]…`) | native, dialogue in quotes |
+| **Sora 2 / Pro** | `sora-2-text-to-video`, `sora-2-pro-{text,image}-to-video` | per-10s | high | i2v `image_urls` (first frame); identity `character_id_list` | no | native synced; `remove_watermark` |
+| Hailuo 2.3 / 02 | `hailuo/2-3-image-to-video-pro`, `hailuo/02-*` | 6/10s | 1080p | i2v `image_url` ×1 (02 adds `end_image_url`) | no | silent |
+| **Wan 2.6** | `wan/2-6-{text,image,video}-to-video` | 5/10/15s | — | i2v `image_urls` ×1 | YES (`multi_shots` bool) | native + lip-sync |
+| **Wan 2.7 R2V** ⭐ | `wan/2-7-r2v` | 2–10s | — | `reference_image[]`≤5 + `reference_video[]`≤5 (mixed) | composes refs | `reference_voice` |
+| Wan 2.5 | `wan/2-5-{text,image}-to-video` | 5/10s | — | i2v `image_url` ×1 (talking avatar) | no | native + lip-sync |
+| Wan 2.2 Animate | `wan/2-2-animate-move`, `…-replace` | source | — | **motion transfer / char-swap** (image + driving video) | no | none |
+| **PixVerse V6** | `pixverse-v6/{text,image}-to-video` | 1–15s | — | i2v `image_urls`≤2; **Fusion** `image_references`≤7 (`reference-to-video`) | YES (`generate_multi_clip_switch`) | native |
+| MiniMax H3 | `minimax-h3/{text,image,reference}-to-video` | 4–15s | — | R2V `reference_image_urls`≤9 (+video+audio) | YES | native + lip-sync |
+| Runway Gen-4 | `/api/v1/runway/generate` (+ `/extend`, `/aleph`) | 5/10s | 1080p | `imageUrl` ×1; **Aleph** = v2v edit | no | silent |
+| Grok Imagine | `grok-imagine/{text,image}-to-video` | 6–30s | — | i2v `image_urls`≤7 OR `task_id` | no | native + dialogue |
+| HappyHorse 1.0/1.1 | `happyhorse/*`, `happyhorse-1-1/reference-to-video` | 3–15s | — | R2V `reference_image[]` 1–9 | YES | native |
 
-### Nano Banana (Gemini) — strong edits / multi-image blend
-- **Slugs:** `google/nano-banana` (text-only, **no ref input**) · `google/nano-banana-edit` (refs via `input.image_urls`, up to 10) · `google/pro-image-to-image` = nano-banana-pro (refs via `input.image_input`). ~1024px native (base/edit).
-- **Use when:** compositing several references into one (product + scene + style), or edits GPT-Image handles worse. Assign each ref's role in the prompt.
+**Special video modes worth knowing:**
+- **Motion / camera control (puppeteer):** `kling-2.6/motion-control`, `kling-3.0/motion-control` — a character image reproduces the exact gestures + lip movement of a driving video (`input_urls` ×1 image + `video_urls` ×1). 3.0 adds `background_source`.
+- **Video-to-video edit / restyle:** Runway `aleph`, `wan/2-6-video-to-video`, `wan/2-7-videoedit`, `happyhorse/video-edit`, `kling-3.0-omni/transformation`. Edit real footage by instruction (swap outfit, restyle, relight).
+- **Extend / continue:** `pixverse-v6/extend`, `grok-imagine/extend`, Runway `/extend`, Veo Extend — append a segment to a prior clip (usually by its taskId).
+- **First+last-frame transition:** Seedance/Veo/PixVerse `transition`/Hailuo-02 `end_image_url` — morph between two exact stills.
+- **PixVerse templates:** `template_id` = ~50 viral/product effect presets.
+- **Grok spicy:** `mode:'spicy'` on `grok-imagine/text-to-video` (direct) or image-to-video via `task_id` — adult path (see rule 3).
 
-### Ideogram Character — keep ONE character consistent across scenes
-- **Slugs:** `ideogram/character` (put a referenced person into a new scene) · `ideogram/character-remix` (re-render a base image in a new prompt). Ref via `input.reference_image_urls` — **only 1 image is used** (extras ignored); upload it first, ≤10MB. It anchors identity to face+hair.
-- **Use when:** you need the *same* character across multiple stills/shots. Make **N separate generations** reusing the same reference (there's no multi-shot output). This is the right tool for a recurring UGC "creator" identity.
+**Video prompt recipe:** Subject → Action → Environment → Camera → Light/Style → Constraints (~60–100 words). One camera move per shot; never stack conflicting moves. For i2v/refs, **don't re-describe looks** (the image supplies them) — spend words on motion; add "preserve design and colors". Multishot models: name the shots/beats explicitly (`Shot 1… Shot 2…` or timestamp bands).
 
 ---
 
-## Audio
+## IMAGE — pick by capability
 
-### Suno — music
-- **Non-standard envelope:** `POST /api/v1/generate`, poll `GET /api/v1/generate/record-info`; `model` = V4 / V4_5 / V4_5PLUS / V5 / V5_5; states PENDING / TEXT_SUCCESS / FIRST_SUCCESS / SUCCESS / *_FAILED. Returns **2 variations**.
-- **Modes:** `customMode:false` (give an idea, Suno writes lyrics+style) · `customMode:true` + `instrumental:false` (your `prompt` = verbatim lyrics; `style`+`title` required) · `instrumental:true` (no vocals — the option for a UGC bed).
-- **Duration:** only **V5_5 + customMode** exposes `duration` (10–360s, default 20); others are model-capped (V4 ~4min, V4_5 ~8min). Structure a song with inline tags `[Intro] [Verse] [Chorus] [Drop] [Outro] [End]`.
-- **For a UGC bed:** `instrumental:true`, name genre+tempo+instrumentation, "mixed to sit under a voiceover".
+| Model | slug | reference param | max res | note |
+|---|---|---|---|---|
+| **GPT-Image-2** ⭐ | `gpt-image-2-text-to-image`, `…-image-to-image` | i2i `input_urls` ≤16 | 4K* | default; product-consistent edits. *2K/4K need non-1:1 aspect |
+| GPT-Image-1.5 | `gpt-image/1.5-{text,image}-to-image` | i2i `input_urls` ≤16 | — | strongest likeness across edits; safety always on |
+| **Nano Banana Pro / 2** | `google/pro-image-to-image`, `nano-banana-2` | `image_input[]` ≤14 | 4K | Gemini 3; text rendering + world knowledge |
+| Nano Banana / Edit / 2-Lite | `google/nano-banana`, `…-edit`(≤10), `nano-banana-2-lite`(≤10) | `image_urls[]` | 1–2K | cheap compositing |
+| **Seedream 4.5 Edit** | `seedream/4.5-edit` | `image_urls[]` ≤14 | 4K | widest ref fan-in |
+| Seedream 5 Pro/Lite | `seedream/5-pro-image-to-image`(≤10), `…5-lite-image-to-image`(≤14) | `image_urls[]` | 2–4K | pro=fast precision; lite=cheap 4K |
+| Seedream 4.0 | `bytedance/seedream-v4-{text-to-image,edit}` | edit `image_urls[]` ≤10 | 4K | **`max_images` 1–6** batch; `seed` |
+| **Ideogram Character** | `ideogram/character`, `…-edit`, `…-remix` | `reference_image_urls` (1 used) | — | keep ONE character across scenes; remix separates char vs style refs |
+| Ideogram V3 | `ideogram/v3-{text-to-image,edit,remix}` | v3-edit `image_url`+`mask_url` | — | best typography/logos |
+| Flux-2 Pro/Flex | `flux-2/{pro,flex}-{text,image}-to-image` | i2i `input_urls` 1–8 | — | literal text/labels/logos, photoreal materials |
+| Flux Kontext | `/api/v1/flux/kontext/generate` | `inputImage` ×1 | — | camelCase params; single-image edit |
+| Imagen 4 / Fast / Ultra | `google/imagen4`, `…-fast`, `…-ultra` | **text-only, no ref** | — | photoreal + typography; safety always on |
+| Qwen3 / Pro | `qwen3/{text-to-image,image-to-image}`, `qwen3/pro-*` | i2i `image_urls` 1–3 | 2K | compositing (subject+product+bg); CJK text |
+| Qwen / Qwen-Edit | `qwen/{text-to-image,image-to-image,image-edit}` | `image_url` ×1 | — | best complex CJK text; `num_images` batch on edit |
+| Z-Image Turbo | `z-image` | text-only | — | sub-second, open-source, bilingual text |
 
-### ElevenLabs — text-to-speech
-- **Slug:** `elevenlabs/text-to-speech-turbo-2-5`. Standard `createTask`. Output MP3.
-- **Voice:** ONE `voice` per call (preset name like "Rachel"/"Adam" or a voice ID; default James). Preview: `https://static.aiquickdraw.com/elevenlabs/voice/<voice_id>.mp3`. 32 languages. `timestamps:true` returns per-word timing (useful for caption/animation sync).
-- **Limits:** 5000 chars/call (~5–6 min) — **chunk long scripts** and chain with `previous_text`/`next_text` for continuity. No multi-speaker/dialogue here (that's Eleven v3, not exposed) and no voice-clone upload on this endpoint.
+**Special image modes:** **layer decomposition** `seedream/5-pro-layer-decomposition` (split a flat image into editable transparent layers) · **segment map** `grok-imagine-image-2-0/segment-map` (returns masks, not an image) · consistency series: reuse the same reference across N calls (Ideogram Character / GPT-Image-1.5).
+
+**Image prompt tips:** i2i → say *"use the provided product image exactly, do not redraw"*. For 2K/4K on GPT-Image, set an explicit non-1:1 aspect. Transient 500s → resubmit (failed submit costs 0).
 
 ---
 
-## Quick routing
+## LIP-SYNC / TALKING AVATAR
 
-| Need | Model | Ref goes in |
+| Model | slug | character | mouth driver | note |
+|---|---|---|---|---|
+| **OmniHuman 1.5** ⭐ | `omnihuman-1-5` | `image_url` ×1 (people/pets/anime) | `audio_url` | optional `prompt` steers camera/emotion; <60s. Pre-gate with `…/human-identification` |
+| Kling AI Avatar | `kling/ai-avatar-standard`, `…-pro` | `image_url` ×1 (face) | `audio_url` | length = audio; Pro = 1080p |
+| InfiniTalk | `infinitalk/from-audio` | `image_url` ×1 | `audio_url` | `prompt` mandatory |
+| Volcengine lip-sync | `volcengine/video-to-video-lip-sync` | **existing video** `video_url` | `audio_url` | re-syncs footage; `separate_vocal` |
+| Wan 2.5 i2v | `wan/2-5-image-to-video` | `image_url` ×1 | dialogue text | talking avatar from a still |
+| Gemini Omni | `gemini-omni-character`→`gemini-omni-video` | register identity once → reuse | generative | reusable characterId + audio_ids |
+
+---
+
+## AUDIO
+
+**Suno (music)** — `POST /api/v1/generate` (+ suno-api endpoints), models V4 / V4_5 / V5 / V5_5.
+- Generate: `customMode:false` (idea→lyrics+style) · `customMode:true`+`instrumental:false` (verbatim lyrics + `style`+`title`) · `instrumental:true` (UGC bed). Section tags `[Intro][Verse][Chorus][Drop][Outro][End]`. `duration` only on V5_5+custom.
+- Extras: **persona** (`/generate-persona` → `personaId`, reuse voice/style on V5/V5.5) · **mashup** (2 tracks) · **add-instrumental / add-vocals** (over an uploaded stem) · **extend** · **stem separation** (`/vocal-removal`) · **timestamped lyrics** (`/get-timestamped-lyrics` → word-level sync for captions/karaoke).
+
+**Speech (TTS)**
+| Model | slug | note |
 |---|---|---|
-| Product/character in a **video**, multishot, audio | Seedance 2.0 (full) | `reference_image_urls` (≤9) |
-| Cheaper video, ≤720p | Seedance 2.0 Mini | `reference_image_urls` |
-| One clean 5/10s shot, best motion | Kling v2.5 | `input.image_url` (1 only) |
-| Dialogue / cinematic / exact beat timing | Veo 3.1 | `imageUrls` (REFERENCE_2_VIDEO) |
-| Product-consistent **still** | GPT-Image-2 i2i | `input_urls` (≤16) |
-| Composite several refs into one still | Nano Banana Edit | `image_urls` (≤10) |
-| **Same character** across many stills | Ideogram Character | `reference_image_urls` (1) |
-| Music bed | Suno (`instrumental:true`) | — |
-| Voiceover | ElevenLabs | — |
+| ElevenLabs Turbo v2.5 | `elevenlabs/text-to-speech-turbo-2-5` | fast; 1 `voice`; `timestamps` |
+| ElevenLabs Multilingual v2 | `elevenlabs/text-to-speech-multilingual-v2` | `stability`/`similarity_boost`/`style`/`speed`; 68 voices |
+| **ElevenLabs Dialogue v3** ⭐ | `elevenlabs/text-to-dialogue-v3` | **multi-speaker**: `dialogue[]` of {text, voice}; inline emotion tags |
+| **Gemini 3.1 Flash TTS** | `google/gemini-3-1-flash-tts` | most directable: `scene` + per-speaker accent/voice; multi-speaker |
+| Audio isolation | `elevenlabs/audio-isolation` | strip noise/music → clean voice |
 
-> ⚠️ Prices aren't in the specs — they come back as `creditsConsumed` after the task.
-> On a model's first use in a session, read its kie.ai page for the live credit rate,
+All TTS cap ~5000 chars/call → chunk long scripts.
+
+---
+
+## UTILITY (post-processing)
+
+| Job | slug | note |
+|---|---|---|
+| Remove background | `recraft/remove-background` | subject on transparent — run before compositing |
+| Upscale image | `topaz/image-upscale` (1/2/4×), `recraft/crisp-upscale` (fixed) | final polish |
+| Upscale video | `topaz/video-upscale` (1/2/4×), `grok-imagine/upscale` (720/1080p, KIE task only) | |
+| Human/subject detect | `omnihuman-1-5/subject-detection`, `…/human-identification` | masks / valid-human gate before paying |
+
+---
+
+## Full catalog (call any with `kie_fetch_model_docs`)
+
+**Video:** bytedance/seedance-2, seedance-2-5, seedance-2-fast, seedance-2-mini, seedance-1.5-pro, v1-pro/lite-{text,image}-to-video(+fast) · kling-3.0/video, kling-3.0-omni/{text-to-video,image-to-video,reference-to-video,transformation}, kling/v3-turbo-{text,image}-to-video, kling/v2-5-turbo-{text,image}-to-video-pro, kling/v2-1-master-{text,image}-to-video, kling/v2-1-standard, kling-2.6/{text,image}-to-video · veo3/veo3_fast/veo3_lite · sora-2-{text,image}-to-video, sora-2-pro-{text,image}-to-video · hailuo/2-3-image-to-video-{pro,standard}, hailuo/02-{text,image}-to-video-{pro,standard} · wan/2-5-{text,image}-to-video, wan/2-6-{text,image,video}-to-video, wan/2-7-{text-to-video,image-to-video,r2v,videoedit}, wan/2-2-animate-{move,replace} · pixverse-v6/{text-to-video,image-to-video,transition,extend,reference-to-video} · minimax-h3/{text,image,reference}-to-video · runway generate/extend/aleph · grok-imagine/{text,image}-to-video, grok-imagine-video-1-5-preview, grok-imagine/extend · happyhorse/{text,image,reference}-to-video, happyhorse/video-edit, happyhorse-1-1/reference-to-video · gemini-omni-video
+
+**Motion/lipsync:** kling-2.6/motion-control, kling-3.0/motion-control, kling/ai-avatar-{standard,pro} · omnihuman-1-5(+subject-detection,+human-identification) · infinitalk/from-audio · volcengine/video-to-video-lip-sync · gemini-omni-character
+
+**Image:** gpt-image-2-{text,image}-to-image, gpt-image/1.5-{text,image}-to-image · google/nano-banana, nano-banana-edit, pro-image-to-image, nano-banana-2, nano-banana-2-lite · bytedance/seedream-v4-{text-to-image,edit}, seedream/4.5-{text-to-image,edit}, seedream/5-{lite,pro}-{text-to-image,image-to-image}, seedream/5-pro-layer-decomposition · flux-2/{pro,flex}-{text,image}-to-image, flux-kontext · google/imagen4(+fast,+ultra) · qwen/{text-to-image,image-to-image,image-edit}, qwen3/{text-to-image,image-to-image}, qwen3/pro-text-to-image, qwen2/* · ideogram/character, character-edit, character-remix, v3-{text-to-image,edit,remix} · z-image · grok-imagine/{text-to-image,image-to-image}, grok-imagine-image-2-0/{text-to-image,segment-edit,segment-map} · recraft/{remove-background,crisp-upscale} · topaz/{image,video}-upscale · 4o-image
+
+**Audio:** suno (generate + persona/mashup/add-instrumental/add-vocals/extend/vocal-removal/get-timestamped-lyrics) · elevenlabs/{text-to-speech-turbo-2-5,text-to-speech-multilingual-v2,text-to-dialogue-v3,audio-isolation} · google/{gemini-2-5-pro-tts,gemini-3-1-flash-tts}, gemini-omni-audio
+
+> ⚠️ Prices come back as `creditsConsumed` after the task (specs don't list them).
+> On a model's first use in a session, read its kie.ai page for the credit rate,
 > quote it (credits × $0.005), and wait for the go before submitting.
