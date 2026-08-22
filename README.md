@@ -181,9 +181,24 @@ Launch it:
 Analyze this channel and make a faceless video on the best untapped idea. (paste channel URL)
 ```
 
-Stages: research the niche/competitors (uses your **NexLev / vidIQ** MCP if connected, else web search) → write a narration script → generate one image every 5–7s and **animate the opening shots** (static-only AI videos get suppressed by YouTube) → voice it with ElevenLabs → package an assembly kit + overlay graphics for CapCut, or auto-assemble via hyperframes if you use it.
+Stages: research the niche/competitors → write a narration script → generate one image every 5–7s and **animate the opening shots** (static-only AI videos get suppressed by YouTube) → voice it with ElevenLabs → package an assembly kit + overlay graphics ready for an editor.
 
 Output lands in `./youtube-factory-output/<slug>/`.
+
+---
+
+## Optional integrations
+
+The kit works on its own, but `youtube-factory` gets better with a YouTube-research MCP connected, and you can auto-assemble the final cut instead of editing by hand. All third-party — installed separately, not bundled here.
+
+| Add | What it gives | Used for |
+|---|---|---|
+| [NexLev](https://nexlev.io) MCP | YouTube channel database — analytics, outliers, transcripts, a 20k+ niche finder. Has an official MCP for Claude. | Stage 1 research: find winning channels/videos and pull competitor transcripts |
+| [vidIQ](https://vidiq.com) MCP | Channel analytics + keyword research on a larger database | Stage 1 research: alternative to or alongside NexLev |
+| **HyperFrames** (Claude skill) | Renders finished video from HTML | Stage 5: auto-assemble the video instead of editing manually |
+| [CapCut](https://www.capcut.com) | Manual video editor | Stage 5: hand-assemble from the kit's output |
+
+> Without a research MCP, Stage 1 falls back to plain web search — it still works, just with less YouTube-specific data.
 
 ---
 
