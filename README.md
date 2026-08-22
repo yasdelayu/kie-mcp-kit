@@ -4,160 +4,258 @@
 
 # 🎨 KIE MCP Kit
 
-**Пусть твой ИИ-агент генерит картинки, видео, музыку и речь прямо в чате — на самых свежих моделях.**
+**Let your AI agent generate images, video, music and speech right in the chat — on the latest models.**
 
-Seedance · Kling · Veo · Sora 2 · GPT-Image-2 · Nano Banana · Flux · Suno · ElevenLabs — и всё новое, что выкатит KIE.
+Seedance · Kling · Veo · Sora 2 · GPT-Image-2 · Nano Banana · Flux · Suno · ElevenLabs — plus anything new KIE ships.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![KIE.ai](https://img.shields.io/badge/powered%20by-KIE.ai-black.svg)](https://kie.ai)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-ready-orange.svg)](https://docs.claude.com/en/docs/claude-code)
+[![uv](https://img.shields.io/badge/runs%20on-uv-DE5FE9.svg)](https://docs.astral.sh/uv/)
 
-**Русский** · [English](README.en.md)
+**English** · [Русский](README.ru.md)
 
 </div>
 
 ---
 
-## Что это
+## What this is
 
-Готовый набор из двух частей — и твой агент (Claude Code, Claude Desktop, Codex) умеет делать любой визуальный или аудио-ассет по обычной просьбе на человеческом языке.
+A ready-to-use kit: **one MCP connector + three skills**, and your agent (Claude Code, Claude Desktop, Codex) can make any visual or audio asset — or a whole content campaign — from a plain-English request.
 
-| Компонент | Что делает |
+| Component | What it does |
 |---|---|
-| 🔌 **Коннектор** (`server/kie_server.py`) | Маленький MCP-сервер: 5 дженерик-тулзов, которые ходят в [KIE.ai](https://kie.ai) — агрегатор ~100 творческих моделей. Умышленно «тупой»: не по тулзе на модель, а 5 универсальных. KIE выкатывает новую модель — коннектор обновлять не нужно, агент сам читает её доки. |
-| 🧠 **Скилл** (`skill/generate-anything`) | Мозги. Ловит просьбу → выбирает модель → лезет в её доки за формой запроса → **называет цену в долларах и ждёт твоё «го»** → сабмитит, поллит, качает файл. |
+| 🔌 **Connector** (`server/kie_server.py`) | A tiny MCP server: 5 generic tools that call [KIE.ai](https://kie.ai) — an aggregator of ~100 creative models. Deliberately "dumb": 5 generic tools instead of one per model, so a new KIE model works without touching the connector — the agent just reads its docs. |
+| 🧠 **generate-anything** | Single assets. Catches your request → picks a model → reads its live docs → **quotes the price in dollars and waits for your go** → submits, polls, downloads. |
+| 🏭 **content-factory** | Bulk UGC product ads. A 5-stage pipeline: research → plan → generate (still→video, in batches) → schedule → cost report. |
+| 📺 **youtube-factory** | Faceless YouTube videos. Research a niche (NexLev/vidIQ) → script → a new image every 5–7s + animated openers → ElevenLabs voiceover → assembly kit. |
 
-> 💡 Ты не запоминаешь команды. Пишешь *«сделай вертикальное видео этой бутылки, UGC-стиль»* — остальное делает скилл.
+> 💡 You don't memorize commands. Say *"make a vertical UGC video of this bottle"* — the skill does the rest.
 
 ---
 
-## Установка за 3 шага
+## Requirements
 
-### Шаг 1 — ключ KIE.ai
+| Need | Why | Get it |
+|---|---|---|
+| A **KIE.ai API key** | Pays for and authorizes generations | [kie.ai](https://kie.ai) → Dashboard → API Keys |
+| **[uv](https://docs.astral.sh/uv/)** | Runs the connector and auto-installs its Python deps | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| An **MCP client** | Drives the tools | Claude Code, Claude Desktop, or Codex |
 
-Зайди на [kie.ai](https://kie.ai) → войди → **Dashboard → API Keys** → создай ключ и скопируй. Пополнение баланса там же (1000 кредитов = $5).
+The connector's Python dependencies (`fastmcp`, `requests`) are declared inline in the script — `uv` installs them into an ephemeral environment on first run. You never manage a venv.
 
-### Шаг 2 — коннектор + скилл
+---
 
-Нужен [`uv`](https://docs.astral.sh/uv/) — он запускает сервер и сам ставит его зависимости (`curl -LsSf https://astral.sh/uv/install.sh | sh`).
+## Install
 
-**Самый быстрый путь (Claude Code)** — скрипт поставит и скилл, и коннектор:
+### Step 1 — get your KIE key
+
+Go to [kie.ai](https://kie.ai) → sign in → **Dashboard → API Keys** → create a key and copy it. Top up your balance there too (**1000 credits = $5**, i.e. **$0.005/credit**).
+
+### Step 2 — one-command install (Claude Code)
 
 ```bash
 git clone https://github.com/yasdelayu/kie-mcp-kit && cd kie-mcp-kit
-KIE_API_KEY=ТВОЙ_КЛЮЧ ./install.sh
+KIE_API_KEY=YOUR_KEY ./install.sh
 ```
+
+The script installs all three skills into `~/.claude/skills/` and registers the connector with Claude Code (user scope). Then jump to [Verify](#verify).
+
+### Step 2 (alternative) — manual setup
+
+<details open>
+<summary><b>Claude Code</b></summary>
+
+```bash
+# from the cloned repo folder:
+claude mcp add --scope user kie \
+  --env KIE_API_KEY=YOUR_KEY \
+  -- uv run "$(pwd)/server/kie_server.py"
+```
+
+`--scope user` makes it available in every project. To use a project scope instead, drop `--scope user`.
+</details>
 
 <details>
-<summary>Или вручную / другой клиент</summary>
+<summary><b>Codex CLI</b></summary>
 
-**Claude Code:**
 ```bash
-claude mcp add --scope user kie --env KIE_API_KEY=ТВОЙ_КЛЮЧ -- uv run /путь/к/kie-mcp-kit/server/kie_server.py
+codex mcp add kie \
+  --env KIE_API_KEY=YOUR_KEY \
+  -- uv run /path/to/kie-mcp-kit/server/kie_server.py
 ```
-Проверка: `claude mcp list` → `kie ✓ Connected`.
+</details>
 
-**Codex CLI:**
-```bash
-codex mcp add kie --env KIE_API_KEY=ТВОЙ_КЛЮЧ -- uv run /путь/к/kie-mcp-kit/server/kie_server.py
-```
+<details>
+<summary><b>Claude Desktop / any MCP client</b></summary>
 
-**Claude Desktop / любой MCP-клиент** — вписать в конфиг:
+Add this to the client's MCP config (Claude Desktop: **Settings → Developer → Edit Config**):
+
 ```json
 {
   "mcpServers": {
     "kie": {
       "command": "uv",
-      "args": ["run", "/путь/к/kie-mcp-kit/server/kie_server.py"],
-      "env": { "KIE_API_KEY": "ТВОЙ_КЛЮЧ" }
+      "args": ["run", "/path/to/kie-mcp-kit/server/kie_server.py"],
+      "env": { "KIE_API_KEY": "YOUR_KEY" }
     }
   }
 }
 ```
+
+Use an **absolute** path to `kie_server.py`. Fully quit and reopen the app afterward.
 </details>
 
-### Шаг 3 — скилл (если ставил коннектор вручную)
+### Step 3 — install the skills (only if you set up the connector manually)
 
 ```bash
-cp -r skill/generate-anything ~/.claude/skills/generate-anything
+mkdir -p ~/.claude/skills
+cp -r skill/generate-anything  ~/.claude/skills/generate-anything
+cp -r skill/content-factory    ~/.claude/skills/content-factory
+cp -r skill/youtube-factory    ~/.claude/skills/youtube-factory
 ```
 
 ---
 
-## Как пользоваться
+## Verify
 
-Рабочий цикл всегда одинаковый:
+```bash
+claude mcp list          # expect:  kie  ✓ Connected
+```
 
-1. Просишь по-человечески: *«трек ~124 bpm без вокала под войсовер»*
-2. Скилл называет цену: *«Suno V4 — ~X кр (~$Y). Го?»* — **до «го» деньги не тратятся**
-3. Говоришь «го» → сабмит → поллинг → файл на диске
+Then, in Claude Code, ask for something small:
 
-| Задача | Что сказать | Дефолтная модель |
-|---|---|---|
-| Картинка из текста | «нарисуй …» | GPT-Image-2 |
-| Картинка по референсам | «переделай это фото …» + приложи | GPT-Image-2 i2i |
-| Видео из текста | «сделай видео …» | Seedance 2.0 Mini |
-| Видео из картинки | «оживи это фото» + приложи | Seedance + first_frame |
-| Музыка | «трек …» | Suno |
-| Речь / озвучка | «озвучь …» | ElevenLabs |
-| Апскейл, talking head, ремувбг, 4K | просто попроси | подберёт из ~100 моделей |
+```text
+How much would a 5-second 720p Seedance video cost?
+```
 
-**Полезное:**
-- *«Сколько будет стоить X?»* — посчитает, ничего не генерируя.
-- Локальный файл как референс — приложи путь, скилл сам загрузит его на KIE.
-- Лучшее видео = два шага: сначала картинка (контролируешь вид), потом оживляешь.
-- Текст в видео плывёт → вписывай его в стартовую картинку, не в промпт видео.
-- ⚠️ Названия студий («Studio Ghibli») режет фильтр — пиши описательно.
-- `500` на сабмите → просто повтори (стоит 0). `fail` → сначала читай `failMsg`.
-- Устал от подтверждений? Скажи *«хватит спрашивать, просто генери»* — цену всё равно назовёт.
+The skill answers with a price and generates nothing. If that works, you're set. You can also smoke-test the server directly (no API key needed — it only checks the pure logic):
 
-**Цена:** кредиты × **$0.005**. Баланс: *«сколько у меня осталось?»* → скилл дёрнет `GET /api/v1/chat/credit`.
+```bash
+uv run server/kie_server.py --selftest      # prints: selftest ok
+```
 
 ---
 
-## Контент-заводы (скиллы поверх коннектора)
+## Usage
 
-Кроме `generate-anything` (одиночная генерация), в ките два конвейерных скилла — для серийного контента:
+You mostly just talk to the agent. Here's what triggers what.
 
-| Скилл | Для чего | Пайплайн |
-|---|---|---|
-| 🏭 **content-factory** | UGC-реклама продукта пачкой | Рисёрч трендов → HTML-план на N роликов (5 UGC-форматов) → генерация фото→видео батчами → имидж-пак → CSV-календарь/Meta → отчёт затрат |
-| 📺 **youtube-factory** | Фейслес YouTube-видео | Рисёрч ниши/конкурентов (NexLev/vidIQ) → скрипт закадра → картинка каждые 5–7с + анимация первых кадров → озвучка ElevenLabs → сборка + графика |
+### generate-anything — single assets
 
-Оба триггерятся сами по смыслу запроса. Примеры:
-- *«собери 100 UGC-роликов для этого продукта»* → **content-factory**
-- *«разбери этот канал и сделай фейслес-видео по лучшей теме»* → **youtube-factory**
-
-> youtube-factory использует твои MCP для YouTube-данных (NexLev / vidIQ), если они подключены; иначе падает на обычный web-поиск. Монтаж — CapCut вручную или авто-сборка через hyperframes.
-
----
-
-## Тулзы коннектора
-
-| Тулза | Что делает |
+| Say this | What happens |
 |---|---|
-| `kie_post(path, body)` | POST на любой эндпоинт KIE — **сабмит** задачи (обычно `/api/v1/jobs/createTask`). |
-| `kie_get(path)` | GET — **поллинг** статуса (`/api/v1/jobs/recordInfo?taskId=…`). |
-| `kie_upload_file(localPath, uploadPath?)` | Локальный медиа-файл → hosted-URL KIE (~3 дня) под `@Image`/`@Video`. |
-| `kie_download(url, destPath)` | Скачать результат на диск (создаёт папки). |
-| `kie_fetch_model_docs(path\|url, force?)` | Живые доки модели с docs.kie.ai (кэш ~3 дня). |
-| ресурс `kie://models` | Живой каталог моделей KIE — точка старта, когда задача не из дефолтов. |
+| `Draw a serene mountain cabin at golden hour, 9:16` | GPT-Image-2 image |
+| `Make a 5s video of this product, UGC handheld` (+ attach a photo) | still → Seedance video |
+| `An upbeat ~124 bpm instrumental to sit under a voiceover` | Suno track |
+| `Voice this paragraph in a warm female voice` | ElevenLabs speech |
+| `How much would a 10s Kling video cost?` | price only, no generation |
+
+The flow every time: the skill **names the model + price in dollars** and waits for your **"go"**, then submits, polls, and downloads the file. Nothing is billed before you say go. Say *"stop asking, just generate"* to skip the wait (it still states the price).
+
+### content-factory — bulk UGC product ads
+
+Launch it:
+
+```text
+Build a content campaign for this product — 100 UGC videos. (attach product photo)
+```
+
+It runs 5 stages, each gated by a button choice you click:
+
+1. **Research** — scans this week's trends in your product's niche → 15+ viral ideas.
+2. **Plan** — a polished HTML plan: every video mapped, dated, split across 5 UGC formats (Entertainment · Street Interview · Unboxing · Product Review · ASMR).
+3. **Generate** — for each idea: a product still (GPT-Image-2) → animated to video (Seedance), in batches you approve one at a time, plus an image asset pack.
+4. **Schedule** — an exportable CSV calendar (or pushed to Meta Ads if you have that MCP).
+5. **Cost report** — an HTML report: what you actually spent on KIE vs traditional production.
+
+Idea variety is pulled from [`skill/content-factory/references/prompt-library.md`](skill/content-factory/references/prompt-library.md) — concept seeds, hook scenes, settings, and per-format prompt patterns.
+
+Output lands in `./content-factory-output/<brand>/`.
+
+### youtube-factory — faceless YouTube videos
+
+Launch it:
+
+```text
+Analyze this channel and make a faceless video on the best untapped idea. (paste channel URL)
+```
+
+Stages: research the niche/competitors (uses your **NexLev / vidIQ** MCP if connected, else web search) → write a narration script → generate one image every 5–7s and **animate the opening shots** (static-only AI videos get suppressed by YouTube) → voice it with ElevenLabs → package an assembly kit + overlay graphics for CapCut, or auto-assemble via hyperframes if you use it.
+
+Output lands in `./youtube-factory-output/<slug>/`.
 
 ---
 
-## Безопасность
+## Connector tools
 
-- 🔑 Ключ хранится в настройках клиента / переменной окружения, **не** в репо.
-- 🌐 API-ключ уходит только на хосты KIE (`KIE_BASE_URL` / `KIE_UPLOAD_URL`); на чужой origin коннектор запрос не пустит.
-- 📁 Задай `KIE_WORKSPACE_DIR` = папка проекта — тогда чтение/запись файлов заперты внутри неё (коннектор откажется от `/` или голого `~`).
-- 🖼️ Аплоад — только известные медиа-типы; даунлоад отказывается писать скрипты/исполняемые файлы.
+| Tool | What it does |
+|---|---|
+| `kie_post(path, body)` | POST to any KIE endpoint — **submit** a task (usually `/api/v1/jobs/createTask`). |
+| `kie_get(path)` | GET — **poll** status (`/api/v1/jobs/recordInfo?taskId=…`) or check balance. |
+| `kie_upload_file(localPath, uploadPath?)` | Local media file → KIE-hosted URL (~3 days) for `@Image`/`@Video` references. |
+| `kie_download(url, destPath)` | Save a result to disk (creates folders; refuses script/executable destinations). |
+| `kie_fetch_model_docs(path\|url, force?)` | A model's live docs from docs.kie.ai (cached ~3 days). |
+| resource `kie://models` | Live KIE model catalog — the starting point when the job isn't a default. |
+
+**Job lifecycle:** `POST /api/v1/jobs/createTask {model, input}` → save `taskId` → `GET /api/v1/jobs/recordInfo?taskId=…` until `state:success` → download `resultJson.resultUrls[]`. Exceptions: **Veo** (`/api/v1/veo/generate`, `successFlag`) and **Suno** (`/api/v1/generate`) use their own envelopes — the skills fetch their docs first. **Balance:** `GET /api/v1/chat/credit` → `data` is the credit number.
 
 ---
 
-## Кредиты и лицензия
+## Environment variables
 
-- 🔌 **Коннектор** — [@yasdelayu](https://github.com/yasdelayu), собственная реализация 5-тулзового MCP поверх [KIE.ai API](https://docs.kie.ai). MIT.
-- 🧠 **Скилл `generate-anything`** — Anthropic.
-- **[KIE.ai](https://kie.ai)** — сторонний агрегатор моделей, к которому подключается коннектор (не аффилирован).
+| Variable | Default | Required |
+|---|---|---|
+| `KIE_API_KEY` | — | **Yes** |
+| `KIE_BASE_URL` | `https://api.kie.ai` | No |
+| `KIE_UPLOAD_URL` | `https://kieai.redpandaai.co/api/file-stream-upload` | No |
+| `KIE_DOCS_BASE` | `https://docs.kie.ai` | No |
+| `KIE_WORKSPACE_DIR` | *(unset — resolves against the working dir)* | Recommended |
 
-Подробнее — [CREDITS.md](CREDITS.md). Лицензия — [MIT](LICENSE).
+Set them in your MCP client's `env` block (see the config above). Set `KIE_WORKSPACE_DIR` to your project folder to confine all file reads/writes to it.
+
+---
+
+## Security
+
+- 🔑 The key lives in your client's settings / an env var, **never** in the repo.
+- 🌐 The API key only reaches KIE hosts (`KIE_BASE_URL` / `KIE_UPLOAD_URL`); the connector refuses any other origin, and credentials are dropped on cross-origin redirects.
+- 📁 With `KIE_WORKSPACE_DIR` set, uploads/downloads are confined to that folder (it refuses `/` or a bare home directory).
+- 🖼️ Uploads are known media types only; downloads refuse dotfiles, scripts, and executables.
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `uv: command not found` | Install uv: `curl -LsSf https://astral.sh/uv/install.sh \| sh`, then restart the shell. |
+| `claude mcp list` shows `kie ✗` | Check the path to `server/kie_server.py` is absolute and correct; confirm `KIE_API_KEY` is set in the client's env; restart the client. |
+| `Blocked: … may only reach …` | You pointed a tool at a non-KIE host. Leave `KIE_BASE_URL`/`KIE_UPLOAD_URL` at defaults unless KIE tells you otherwise. |
+| `500` on submit | Transient — resubmit. A failed submit costs 0 credits. |
+| Job `state: fail` | Read `failMsg`. Filter rejections (e.g. a copyrighted studio name) need a reworked prompt, not a retry. |
+| Not enough credits | Top up at kie.ai. Ask *"how much do I have left?"* to check the balance. |
+
+---
+
+## Update & uninstall
+
+```bash
+# update
+cd kie-mcp-kit && git pull            # then re-run ./install.sh if skills changed
+
+# uninstall
+claude mcp remove kie
+rm -rf ~/.claude/skills/{generate-anything,content-factory,youtube-factory}
+```
+
+---
+
+## Credits & license
+
+- 🔌 **Connector** — [@yasdelayu](https://github.com/yasdelayu), an original 5-tool MCP implementation over the [KIE.ai API](https://docs.kie.ai). MIT.
+- 🧠 **generate-anything** skill — Anthropic.
+- 🏭 **content-factory** / 📺 **youtube-factory** — by @yasdelayu (MIT); pipeline designs adapted from Anthropic's `higgsfield-content-factory` skill and the [razgon.school](https://razgon.school/materials/ClaudeYouTube) "Claude + YouTube" method, re-implemented on KIE.
+- **[KIE.ai](https://kie.ai)** — the third-party model aggregator the connector talks to (not affiliated). NexLev / vidIQ are third-party MCPs used only when you connect them.
+
+See [CREDITS.md](CREDITS.md). License — [MIT](LICENSE).

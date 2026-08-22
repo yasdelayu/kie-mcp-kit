@@ -80,7 +80,7 @@ Anything not listed: **discover it.** A "—" means no tuned default, not "unsup
 Nearly every Market model uses the shared flow above. **Exceptions live in their own namespace** with their own endpoints and states — fetch their docs before use:
 
 - **Suno** (music) — `/api/v1/generate`, poll `/api/v1/generate/record-info`, states `PENDING / TEXT_SUCCESS / FIRST_SUCCESS / SUCCESS / *_FAILED`
-- **Veo 3.1** — `/veo3-api/…` (separate endpoints for 1080p and 4K retrieval)
+- **Veo** (veo3 / veo3_fast / veo3_lite) — submit `POST /api/v1/veo/generate`, poll `GET /api/v1/veo/record-info?taskId=…`, uses `successFlag` (0/1/2/3); `data.resultUrls` is a JSON-encoded string (parse it)
 - **Runway**, **4o Image**, **Flux Kontext** — each their own namespace
 
 ---
