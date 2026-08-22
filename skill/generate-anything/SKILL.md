@@ -18,7 +18,7 @@ Tools: `kie_post`, `kie_get`, `kie_upload_file`, `kie_download`, `kie_fetch_mode
 5. **Upload** any local reference → `kie_upload_file({ localPath })` → use the returned URL. (A URL already hosted by KIE can be passed straight through.)
 6. **Submit** → `kie_post` `/api/v1/jobs/createTask` with `{ model, input }`. **Save the `taskId` immediately.**
 7. **Poll** → `kie_get` `/api/v1/jobs/recordInfo?taskId=…` until `data.state` is `success` (or `fail` → read `data.failMsg`). States: `waiting / queuing / generating / success / fail`.
-8. **Download** → `kie_download({ url: data.resultJson.resultUrls[0], destPath })`. Result URLs expire ~24h.
+8. **Download** → `kie_download({ url: data.resultJson.resultUrls[0], destPath })`. Result URLs expire ~24h. For a single image the download returns an **inline preview** so it shows in the chat (the full file is at `destPath`); pass `preview:false` when you don't want that.
 
 ## Discovery — when the ask isn't in the table
 

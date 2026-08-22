@@ -107,6 +107,8 @@ a consistent subject), `aspect_ratio:"16:9"`, `resolution:"2K"`. Keep a consiste
 visual style across the whole video (state the style once, repeat it in every prompt).
 Batch them: submit, **save every taskId**, poll ~30s, download to
 `./youtube-factory-output/<slug>/images/` as `shot-001.png`, `shot-002.png`, …
+Pass `preview:false` to `kie_download` here — 100+ inline thumbnails would flood
+the context; the files still land on disk.
 
 **3. Animate the opening shots** (`bytedance/seedance-2-mini`, image→video, 5s,
 16:9). Animate at least the **first 5 shots** (more if budget allows) so the video

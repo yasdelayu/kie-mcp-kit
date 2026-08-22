@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["fastmcp>=2.0", "requests>=2.28"]
+# dependencies = ["fastmcp>=2.0", "requests>=2.28", "pillow>=10.0"]
 # ///
 """
 KIE MCP connector — 5 generic tools that let an agent drive any model on KIE.ai.
@@ -17,6 +17,8 @@ crosses the tool boundary. Run:  uv run kie_server.py
 """
 from __future__ import annotations
 
+import io
+import json
 import mimetypes
 import os
 import time
@@ -25,6 +27,7 @@ from urllib.parse import urlparse
 
 import requests
 from fastmcp import FastMCP
+from fastmcp.utilities.types import Image
 
 # --- config ----------------------------------------------------------------
 API_KEY = os.environ.get("KIE_API_KEY", "")
@@ -48,11 +51,16 @@ _DOCS_ORIGIN = _origin_of(DOCS_BASE)
 # The only file types that cross the boundary, in either direction. An allowlist
 # (not a denylist) — anything unlisted is refused, so a script or executable
 # destination can never be reached by an extension this set doesn't name.
-_MEDIA_EXTS = {
-    ".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif",
+_IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"}
+_MEDIA_EXTS = _IMAGE_EXTS | {
     ".mp4", ".mov", ".webm", ".mkv",
     ".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus",
 }
+# An inline preview stays a thumbnail: a client renders an image block as a
+# handful of vision tokens, but the raw bytes as base64 text would blow up the
+# context. Keep the webp small and bounded.
+_PREVIEW_MAX_PX = 1024
+_PREVIEW_MAX_BYTES = 400_000
 
 # One session for connection pooling — a factory run fires dozens of calls.
 # Auth headers stay per-call so docs fetches never carry credentials.
@@ -99,6 +107,31 @@ def _body(resp: requests.Response):
         return resp.json()
     except ValueError:
         return resp.text
+
+
+def _thumbnail(raw: bytes) -> bytes | None:
+    """A small webp preview of an image, or None if it can't be made cheaply.
+
+    Downscale to fit _PREVIEW_MAX_PX and, if still over budget, once more at
+    lower quality. Anything that won't decode or won't shrink returns None —
+    the download still succeeds, just without an inline preview.
+    """
+    try:
+        from PIL import Image as _PILImage
+
+        im = _PILImage.open(io.BytesIO(raw))
+        im.thumbnail((_PREVIEW_MAX_PX, _PREVIEW_MAX_PX))
+        if im.mode not in ("RGB", "RGBA"):
+            im = im.convert("RGB")
+        buf = io.BytesIO()
+        im.save(buf, "WEBP", quality=80)
+        if buf.tell() > _PREVIEW_MAX_BYTES:
+            im.thumbnail((768, 768))
+            buf = io.BytesIO()
+            im.save(buf, "WEBP", quality=65)
+        return buf.getvalue() if buf.tell() <= _PREVIEW_MAX_BYTES else None
+    except Exception:
+        return None
 
 
 def _assert_media_name(name: str, what: str) -> None:
@@ -163,22 +196,42 @@ def kie_upload_file(localPath: str, uploadPath: str | None = None) -> dict:
 
 
 @mcp.tool()
-def kie_download(url: str, destPath: str) -> dict:
+def kie_download(url: str, destPath: str, preview: bool = True):
     """Download a result URL (image/video/audio) to local disk. Creates parent
-    folders. Refuses executable/script destinations."""
+    folders; refuses non-media destinations.
+
+    For an image destination, `preview=True` (default) also returns a small
+    inline thumbnail so the result shows in the chat — the full-resolution file
+    still lands at destPath. Set `preview=False` for batch downloads (dozens of
+    files) so thumbnails don't flood the context; video/audio never preview.
+    """
     dest = _resolve_in_workspace(destPath, "kie_download")
     _assert_media_name(dest.name, "kie_download")
-    with _http.get(url, stream=True, timeout=300) as r:
+    want_preview = preview and dest.suffix.lower() in _IMAGE_EXTS
+
+    # An image we may preview is read whole (they're small); everything else streams.
+    with _http.get(url, stream=not want_preview, timeout=300) as r:
         if not r.ok:  # same shape as kie_post/kie_get — report, don't raise
             return {"ok": False, "status": r.status_code, "destPath": str(dest),
                     "bytes": 0, "error": r.text[:500]}
         dest.parent.mkdir(parents=True, exist_ok=True)
-        n = 0
-        with dest.open("wb") as fh:
-            for chunk in r.iter_content(65536):
-                fh.write(chunk)
-                n += len(chunk)
-    return {"ok": True, "status": r.status_code, "destPath": str(dest), "bytes": n}
+        if want_preview:
+            raw = r.content
+            dest.write_bytes(raw)
+            n = len(raw)
+        else:
+            n = 0
+            with dest.open("wb") as fh:
+                for chunk in r.iter_content(65536):
+                    fh.write(chunk)
+                    n += len(chunk)
+            raw = None
+
+    meta = {"ok": True, "status": r.status_code, "destPath": str(dest), "bytes": n}
+    thumb = _thumbnail(raw) if raw is not None else None
+    if thumb:
+        return [Image(data=thumb, format="webp"), json.dumps(meta)]
+    return meta
 
 
 def _docs_url(path: str | None, url: str | None) -> str:
@@ -268,6 +321,14 @@ def _selftest() -> None:
         _rejects(_workspace_root)
     finally:
         WORKSPACE = saved
+
+    # Inline preview: a real image downscales to a bounded webp; junk returns None
+    from PIL import Image as _PILImage
+    big = io.BytesIO()
+    _PILImage.new("RGB", (4000, 3000), (30, 90, 90)).save(big, "PNG")
+    thumb = _thumbnail(big.getvalue())
+    assert thumb and thumb[:4] == b"RIFF" and len(thumb) <= _PREVIEW_MAX_BYTES, "preview budget"
+    assert _thumbnail(b"not an image") is None
     print("selftest ok")
 
 

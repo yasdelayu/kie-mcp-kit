@@ -42,7 +42,7 @@ A ready-to-use kit: **one MCP connector + three skills**, and your agent (Claude
 | **[uv](https://docs.astral.sh/uv/)** | Runs the connector and auto-installs its Python deps | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | An **MCP client** | Drives the tools | Claude Code, Claude Desktop, or Codex |
 
-The connector's Python dependencies (`fastmcp`, `requests`) are declared inline in the script — `uv` installs them into an ephemeral environment on first run. You never manage a venv.
+The connector's Python dependencies (`fastmcp`, `requests`, `pillow`) are declared inline in the script — `uv` installs them into an ephemeral environment on first run. You never manage a venv.
 
 ---
 
@@ -209,7 +209,7 @@ The kit works on its own, but `youtube-factory` gets better with a YouTube-resea
 | `kie_post(path, body)` | POST to any KIE endpoint — **submit** a task (usually `/api/v1/jobs/createTask`). |
 | `kie_get(path)` | GET — **poll** status (`/api/v1/jobs/recordInfo?taskId=…`) or check balance. |
 | `kie_upload_file(localPath, uploadPath?)` | Local media file → KIE-hosted URL (~3 days) for `@Image`/`@Video` references. |
-| `kie_download(url, destPath)` | Save a result to disk (creates folders; refuses script/executable destinations). |
+| `kie_download(url, destPath, preview?)` | Save a result to disk (creates folders; media-only). For an image it also returns a small **inline preview** so it shows in the chat — `preview:false` to skip (batches). |
 | `kie_fetch_model_docs(path\|url, force?)` | A model's live docs from docs.kie.ai (cached ~3 days). |
 | resource `kie://models` | Live KIE model catalog — the starting point when the job isn't a default. |
 

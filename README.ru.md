@@ -42,7 +42,7 @@ Seedance · Kling · Veo · GPT-Image-2 · Nano Banana · Flux · Suno · Eleven
 | **[uv](https://docs.astral.sh/uv/)** | Запускает коннектор и сам ставит его Python-зависимости | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | **MCP-клиент** | Управляет тулзами | Claude Code, Claude Desktop или Codex |
 
-Python-зависимости коннектора (`fastmcp`, `requests`) объявлены прямо в скрипте — `uv` ставит их в эфемерное окружение при первом запуске. Никаких venv руками.
+Python-зависимости коннектора (`fastmcp`, `requests`, `pillow`) объявлены прямо в скрипте — `uv` ставит их в эфемерное окружение при первом запуске. Никаких venv руками.
 
 ---
 
@@ -209,7 +209,7 @@ uv run server/kie_server.py --selftest      # печатает: selftest ok
 | `kie_post(path, body)` | POST на любой эндпоинт KIE — **сабмит** задачи (обычно `/api/v1/jobs/createTask`). |
 | `kie_get(path)` | GET — **поллинг** статуса (`/api/v1/jobs/recordInfo?taskId=…`) или проверка баланса. |
 | `kie_upload_file(localPath, uploadPath?)` | Локальный медиа-файл → hosted-URL KIE (~3 дня) под `@Image`/`@Video`. |
-| `kie_download(url, destPath)` | Скачать результат на диск (создаёт папки; отказывает скриптам/исполняемым). |
+| `kie_download(url, destPath, preview?)` | Скачать результат на диск (создаёт папки; только медиа). Для картинки ещё возвращает маленькое **инлайн-превью** — оно рендерится прямо в чате; `preview:false` чтобы выключить (батчи). |
 | `kie_fetch_model_docs(path\|url, force?)` | Живые доки модели с docs.kie.ai (кэш ~3 дня). |
 | ресурс `kie://models` | Живой каталог моделей KIE — точка старта, когда задача не из дефолтов. |
 

@@ -203,6 +203,10 @@ finished stills, then submit the animations, poll, download to
 batch ("Generate next" / "Redo this one" / "Pause"). On `fail`, read `failMsg`, log
 the row IDs, offer Retry/Skip — never silently drop.
 
+> Batch downloads: pass `preview:false` to `kie_download` — dozens of inline
+> thumbnails would flood the context. Files still land on disk; surface a few
+> hero shots by re-downloading them with the default preview when you show results.
+
 ### Image asset pack (after all video batches)
 Fire ONE gate. Pack size = `floor(VIDEO_COUNT/5)`, split **40% Social (1:1) · 20%
 Hero (16:9) · 20% With-people · 20% Without-people**. Generate via
