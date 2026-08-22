@@ -1,20 +1,31 @@
 #!/usr/bin/env bash
 # KIE MCP Kit — installer for Claude Code.
-# Installs the generate-anything skill and registers the KIE connector.
-# Usage:  KIE_API_KEY=your_key ./install.sh
+# Installs the skills and registers the KIE connector.
+#
+# Usage:  KIE_API_KEY=your_key ./install.sh [--force]
+#   --force   overwrite skills that are already installed
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
 SERVER="$SCRIPT_DIR/server/kie_server.py"
+FORCE=0
+[ "${1:-}" = "--force" ] && FORCE=1
 
 echo "🎨 KIE MCP Kit installer"
 echo
 
 # 1) Skills -------------------------------------------------------------------
+# An existing folder is left alone unless --force: the same skill may already be
+# installed from a plugin, and two copies of one name collide.
 echo "→ Installing skills into $SKILLS_DIR"
 mkdir -p "$SKILLS_DIR"
 for s in generate-anything content-factory youtube-factory; do
+  if [ -e "$SKILLS_DIR/$s" ] && [ "$FORCE" -eq 0 ]; then
+    echo "  ↷ $s — already installed, skipped (re-run with --force to overwrite)"
+    continue
+  fi
+  rm -rf "$SKILLS_DIR/$s"
   cp -R "$SCRIPT_DIR/skill/$s" "$SKILLS_DIR/$s"
   echo "  ✅ $s"
 done
@@ -42,9 +53,16 @@ if [ -z "${KIE_API_KEY:-}" ]; then
   exit 0
 fi
 
+# `claude mcp add` fails when the name is taken (e.g. an older kie connector),
+# so drop the existing registration first.
+if claude mcp list 2>/dev/null | grep -q '^kie:'; then
+  echo "→ Replacing the existing 'kie' registration"
+  claude mcp remove kie >/dev/null 2>&1 || true
+fi
+
 echo "→ Registering the KIE connector with Claude Code (user scope)"
 claude mcp add --scope user kie --env "KIE_API_KEY=$KIE_API_KEY" -- uv run "$SERVER"
 echo "  ✅ connector registered"
 echo
 echo "Done. Check with:  claude mcp list   (expect: kie ✓ Connected)"
-echo "Then just ask Claude: \"make a 9:16 video of a coffee cup with Seedance\""
+echo "Restart Claude Code so the new connector and skills load."
