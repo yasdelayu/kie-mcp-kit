@@ -84,6 +84,12 @@ from format 1):
 Cinematic formats (Hyper Motion / TV Spot / Wild Card) stay OFF by default; only
 add them on explicit request.
 
+> 📚 **Idea source:** pull concept seeds, hook scenes, settings, per-format prompt
+> patterns and the category→format map from
+> [references/prompt-library.md](references/prompt-library.md) — in Stage 1 (to vary
+> the 15+ ideas) and Stage 3 (to build each prompt). It's the default reference;
+> a live Higgsfield MCP is an optional extra source, off by default (see the library).
+
 ---
 
 ## STAGE 1 — Trend research & viral ideas
