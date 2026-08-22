@@ -225,9 +225,9 @@ The kit works on its own, but `youtube-factory` gets better with a YouTube-resea
 | `KIE_BASE_URL` | `https://api.kie.ai` | No |
 | `KIE_UPLOAD_URL` | `https://kieai.redpandaai.co/api/file-stream-upload` | No |
 | `KIE_DOCS_BASE` | `https://docs.kie.ai` | No |
-| `KIE_WORKSPACE_DIR` | *(unset — resolves against the working dir)* | Recommended |
+| `KIE_WORKSPACE_DIR` | *(unset — the working directory is used)* | Recommended |
 
-Set them in your MCP client's `env` block (see the config above). Set `KIE_WORKSPACE_DIR` to your project folder to confine all file reads/writes to it.
+Set them in your MCP client's `env` block (see the config above). File tools are **always** confined to the workspace: `KIE_WORKSPACE_DIR` when set, otherwise the server's working directory. Point it at your project folder — a host-launched server can inherit an arbitrary working directory, and `/` or a bare home directory is refused outright.
 
 ---
 
@@ -235,8 +235,8 @@ Set them in your MCP client's `env` block (see the config above). Set `KIE_WORKS
 
 - 🔑 The key lives in your client's settings / an env var, **never** in the repo.
 - 🌐 The API key only reaches KIE hosts (`KIE_BASE_URL` / `KIE_UPLOAD_URL`); the connector refuses any other origin, and credentials are dropped on cross-origin redirects.
-- 📁 With `KIE_WORKSPACE_DIR` set, uploads/downloads are confined to that folder (it refuses `/` or a bare home directory).
-- 🖼️ Uploads are known media types only; downloads refuse dotfiles, scripts, and executables.
+- 📁 Uploads/downloads are confined to the workspace (`KIE_WORKSPACE_DIR`, else the working directory), symlinks included; `/` and a bare home directory are refused.
+- 🖼️ Both directions are restricted to an **allowlist** of media types, so a script, executable, or dotfile destination is never reachable — including names Windows would rewrite (`clip.mp4.` → `clip.mp4`).
 
 ---
 
@@ -257,7 +257,8 @@ Set them in your MCP client's `env` block (see the config above). Set `KIE_WORKS
 
 ```bash
 # update
-cd kie-mcp-kit && git pull            # then re-run ./install.sh if skills changed
+cd kie-mcp-kit && git pull                        # connector updates apply on the next restart
+KIE_API_KEY=YOUR_KEY ./install.sh --force         # only if the skills changed
 
 # uninstall
 claude mcp remove kie
