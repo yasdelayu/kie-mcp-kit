@@ -115,6 +115,23 @@ The flow is always the same:
 
 ---
 
+## Content factories (skills on top of the connector)
+
+Besides `generate-anything` (single generations), the kit ships two pipeline skills for content at scale:
+
+| Skill | For | Pipeline |
+|---|---|---|
+| 🏭 **content-factory** | Bulk UGC product ads | Trend research → HTML plan of N videos (5 UGC formats) → still→video generation in batches → image pack → CSV calendar / Meta → cost report |
+| 📺 **youtube-factory** | Faceless YouTube videos | Niche/competitor research (NexLev/vidIQ) → narration script → one image every 5–7s + animate the openers → ElevenLabs voiceover → assembly kit + overlay graphics |
+
+Both auto-trigger by intent. Examples:
+- *"build 100 UGC videos for this product"* → **content-factory**
+- *"analyze this channel and make a faceless video on the best idea"* → **youtube-factory**
+
+> youtube-factory uses your YouTube-data MCPs (NexLev / vidIQ) when connected, and falls back to web search otherwise. Editing is CapCut by hand or auto-assembly via hyperframes.
+
+---
+
 ## Connector tools
 
 | Tool | What it does |

@@ -11,11 +11,13 @@ SERVER="$SCRIPT_DIR/server/kie_server.py"
 echo "🎨 KIE MCP Kit installer"
 echo
 
-# 1) Skill --------------------------------------------------------------------
-echo "→ Installing the generate-anything skill into $SKILLS_DIR"
+# 1) Skills -------------------------------------------------------------------
+echo "→ Installing skills into $SKILLS_DIR"
 mkdir -p "$SKILLS_DIR"
-cp -R "$SCRIPT_DIR/skill/generate-anything" "$SKILLS_DIR/generate-anything"
-echo "  ✅ skill installed"
+for s in generate-anything content-factory youtube-factory; do
+  cp -R "$SCRIPT_DIR/skill/$s" "$SKILLS_DIR/$s"
+  echo "  ✅ $s"
+done
 echo
 
 # 2) Dependencies -------------------------------------------------------------
