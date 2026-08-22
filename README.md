@@ -242,7 +242,7 @@ Set them in your MCP client's `env` block (see the config above). File tools are
 
 - 🔑 The key lives in your client's settings / an env var, **never** in the repo.
 - 🌐 The API key only reaches KIE hosts (`KIE_BASE_URL` / `KIE_UPLOAD_URL`); the connector refuses any other origin, and credentials are dropped on cross-origin redirects.
-- 📁 Uploads/downloads are confined to the workspace (`KIE_WORKSPACE_DIR`, else the working directory), symlinks included; `/` and a bare home directory are refused.
+- 📁 **Downloads** (writes) are confined to the workspace (`KIE_WORKSPACE_DIR`, else the working directory), symlinks included; `/` and a bare home directory are refused. **Uploads** (reads) may come from anywhere under your home folder or the workspace — a read is lower-risk and the media allowlist already blocks secrets.
 - 🖼️ Both directions are restricted to an **allowlist** of media types, so a script, executable, or dotfile destination is never reachable — including names Windows would rewrite (`clip.mp4.` → `clip.mp4`).
 
 ---
@@ -257,6 +257,7 @@ Set them in your MCP client's `env` block (see the config above). File tools are
 | `500` on submit | Transient — resubmit. A failed submit costs 0 credits. |
 | Job `state: fail` | Read `failMsg`. Filter rejections (e.g. a copyrighted studio name) need a reworked prompt, not a retry. |
 | Not enough credits | Top up at kie.ai. Ask *"how much do I have left?"* to check the balance. |
+| `kie_download` returns `ok:false` with a hint | The result host was slow/unreachable; it now fails in ~45s instead of hanging. Retry, or open the `url` directly (result URLs live ~24h). |
 
 ---
 

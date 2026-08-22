@@ -94,11 +94,32 @@ def _workspace_root() -> Path:
 
 
 def _resolve_in_workspace(path: str, what: str) -> Path:
-    """Resolve a local path and confine it (symlinks included) to the workspace."""
+    """Resolve a WRITE path (download) and confine it — symlinks included — to the
+    workspace. Writes land arbitrary bytes on disk, so the boundary stays tight.
+    """
     root = _workspace_root()
     p = Path(path).expanduser()
     p = (p if p.is_absolute() else root / p).resolve()
     _require(root == p or root in p.parents, f"Blocked: {what} path escapes the workspace {root}.")
+    return p
+
+
+def _resolve_readable(path: str, what: str) -> Path:
+    """Resolve a READ path (upload) — allowed anywhere under the user's home dir or
+    the workspace.
+
+    A read is lower-risk than a write, and the caller's media allowlist already
+    refuses secrets/configs (they aren't media types), so pinning uploads to the
+    narrow output folder only broke the normal case — referencing a product photo
+    from Downloads. System paths outside home are still refused.
+    """
+    p = Path(path).expanduser()
+    p = (p if p.is_absolute() else _workspace_root() / p).resolve()
+    roots = [Path.home().resolve()]
+    if WORKSPACE:
+        roots.append(Path(WORKSPACE).expanduser().resolve())
+    _require(any(r == p or r in p.parents for r in roots),
+             f"Blocked: {what} may only read from your home folder or KIE_WORKSPACE_DIR — got {p}.")
     return p
 
 
@@ -175,7 +196,7 @@ def kie_get(path: str) -> dict:
 def kie_upload_file(localPath: str, uploadPath: str | None = None) -> dict:
     """Upload a local media file to KIE storage. Returns a hosted URL (~3-day
     TTL) to use as an @Image/@Video reference in a job payload."""
-    p = _resolve_in_workspace(localPath, "kie_upload_file")
+    p = _resolve_readable(localPath, "kie_upload_file")
     _require(p.is_file(), f"Not a file: {p}")
     _assert_media_name(p.name, "kie_upload_file")
     ctype = mimetypes.types_map.get(p.suffix.lower()) or "application/octet-stream"
@@ -209,23 +230,30 @@ def kie_download(url: str, destPath: str, preview: bool = True):
     _assert_media_name(dest.name, "kie_download")
     want_preview = preview and dest.suffix.lower() in _IMAGE_EXTS
 
-    # An image we may preview is read whole (they're small); everything else streams.
-    with _http.get(url, stream=not want_preview, timeout=300) as r:
-        if not r.ok:  # same shape as kie_post/kie_get — report, don't raise
-            return {"ok": False, "status": r.status_code, "destPath": str(dest),
-                    "bytes": 0, "error": r.text[:500]}
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        if want_preview:
-            raw = r.content
-            dest.write_bytes(raw)
-            n = len(raw)
-        else:
-            n = 0
-            with dest.open("wb") as fh:
-                for chunk in r.iter_content(65536):
-                    fh.write(chunk)
-                    n += len(chunk)
-            raw = None
+    # timeout is (connect, read): fail loud in ~45s of silence, not 5 min. An
+    # image we may preview is read whole (they're small); everything else streams.
+    try:
+        with _http.get(url, stream=not want_preview, timeout=(15, 45)) as r:
+            if not r.ok:  # same shape as kie_post/kie_get — report, don't raise
+                return {"ok": False, "status": r.status_code, "destPath": str(dest),
+                        "bytes": 0, "error": r.text[:500], "url": url}
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if want_preview:
+                raw = r.content
+                dest.write_bytes(raw)
+                n = len(raw)
+            else:
+                n = 0
+                with dest.open("wb") as fh:
+                    for chunk in r.iter_content(262144):
+                        fh.write(chunk)
+                        n += len(chunk)
+                raw = None
+    except requests.RequestException as e:
+        return {"ok": False, "status": 0, "destPath": str(dest), "bytes": 0,
+                "error": f"{type(e).__name__}: {e}", "url": url,
+                "hint": "Origin was slow or unreachable. Result URLs stay valid ~24h — "
+                        "retry, or fetch the URL directly."}
 
     meta = {"ok": True, "status": r.status_code, "destPath": str(dest), "bytes": n}
     thumb = _thumbnail(raw) if raw is not None else None
@@ -363,6 +391,11 @@ def _selftest() -> None:
             assert _resolve_in_workspace("out/clip.mp4", "t") == root / "out" / "clip.mp4"
             _rejects(_resolve_in_workspace, "../escape.mp4", "t")
             _rejects(_resolve_in_workspace, "/etc/passwd", "t")
+            # upload (read) is wider: home-tree ok, workspace ok, system paths refused
+            assert _resolve_readable(str(Path.home() / "Downloads" / "p.png"), "t") \
+                == (Path.home() / "Downloads" / "p.png").resolve()
+            assert _resolve_readable("in.png", "t") == root / "in.png"
+            _rejects(_resolve_readable, "/etc/passwd", "t")
         WORKSPACE = "/"
         _rejects(_workspace_root)
         WORKSPACE = str(Path.home())
