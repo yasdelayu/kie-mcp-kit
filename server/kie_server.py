@@ -92,6 +92,20 @@ def _body(resp: requests.Response):
         return resp.text
 
 
+def _assert_downloadable(name: str) -> None:
+    """Reject a destination the filesystem would turn into a script/executable/dotfile.
+
+    Windows strips trailing dots and spaces at write time, so "evil.js." lands on
+    disk as "evil.js" — validate the name the filesystem will actually create.
+    """
+    eff = name.rstrip(". ")
+    _require(eff == name, f"Blocked: destination has trailing dots/spaces ({name!r}).")
+    _require(bool(eff) and not eff.startswith("."), f"Blocked: refusing to write dotfile ({name!r}).")
+    ext = os.path.splitext(eff)[1].lower()
+    _require(ext not in _DENIED_DL_EXTS,
+             f"Blocked: refusing to write a {ext or 'extension-less'} file — media destinations only.")
+
+
 # --- tools -----------------------------------------------------------------
 @mcp.tool()
 def kie_post(path: str, body: dict) -> dict:
@@ -140,8 +154,7 @@ def kie_download(url: str, destPath: str) -> dict:
     """Download a result URL (image/video/audio) to local disk. Creates parent
     folders. Refuses executable/script destinations."""
     dest = _resolve_in_workspace(destPath, "kie_download")
-    _require(dest.suffix.lower() not in _DENIED_DL_EXTS,
-             f"Blocked: refusing to write a {dest.suffix} file — media destinations only.")
+    _assert_downloadable(Path(destPath).name)
     dest.parent.mkdir(parents=True, exist_ok=True)
     r = requests.get(url, stream=True, timeout=300)
     r.raise_for_status()
@@ -203,6 +216,12 @@ def _selftest() -> None:
     for bad in (None, ""):
         try:
             _docs_url(bad, "https://evil.com/x"); raise AssertionError("origin guard failed")
+        except ValueError:
+            pass
+    _assert_downloadable("clip.mp4")  # allowed
+    for bad in ("evil.js.", "evil.py ", "shell.sh", ".env", "run.py."):
+        try:
+            _assert_downloadable(bad); raise AssertionError(f"download guard missed {bad!r}")
         except ValueError:
             pass
     print("selftest ok")
