@@ -5,9 +5,28 @@ description: Generate images, video, music, speech, avatars and more on command 
 
 # generate-anything — make any asset via the kie MCP
 
-Tools: `kie_post`, `kie_get`, `kie_upload_file`, `kie_download`, `kie_fetch_model_docs`.
+Tools: `kie_post`, `kie_get`, `kie_upload_file`, `kie_download`, `kie_fetch_model_docs`, `kie_workflows`, `kie_workflow_file`.
 
 **The rule that makes this work: you are not limited to the models named below.** KIE hosts ~100 models. The named ones are tuned defaults. For anything else, look it up and call it — that path is normal, not exceptional.
+
+## Before touching a video/reference job → load the model guide
+
+For anything beyond a plain single image, **read the model knowledge first**:
+`kie_workflow_file("generate-anything", "references/models.md")`. It carries the exact
+behaviour of Seedance / Kling / Veo / GPT-Image / Nano Banana / Ideogram / Suno /
+ElevenLabs — durations, how each takes a reference, multishot, audio. It exists so you
+don't guess. Three non-negotiables from it:
+
+- **A reference = reference-mode, never text-to-X.** If the user gave a **product** or
+  **character** photo, route it into that model's reference input (Seedance
+  `reference_image_urls`, GPT-Image i2i `input_urls`, Kling `image_url`, Veo
+  REFERENCE_2_VIDEO, Ideogram Character for a recurring identity). Upload local files
+  with `kie_upload_file` first. Do NOT describe a supplied product/face in a text-only prompt.
+- **Don't chop what one generation does.** Seedance & Veo hold multiple cuts in one 4–15s
+  render via storyboard prompting — don't render "4 clips and edit later".
+- **Faces:** product refs and *style/archetype* looks are fine (generate an original
+  character in that aesthetic). Do NOT reproduce a real, recognizable third party's face
+  without consent. Refuse toxic pairings (e.g. an adult product in a child's setting).
 
 ## The flow (every generation)
 

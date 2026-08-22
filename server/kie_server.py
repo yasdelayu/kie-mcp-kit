@@ -418,6 +418,7 @@ def _selftest() -> None:
         assert kie_workflows(name).lstrip().startswith("---"), f"{name} SKILL.md frontmatter"
     _rejects(kie_workflows, "nope")
     assert "concept seeds" in kie_workflow_file("content-factory", "references/prompt-library.md").lower()
+    assert "reference_image_urls" in kie_workflow_file("generate-anything", "references/models.md")
     _rejects(kie_workflow_file, "content-factory", "../../server/kie_server.py")
     _rejects(kie_workflow_file, "content-factory", "SKILL.md/../../../etc/hosts")
     print("selftest ok")

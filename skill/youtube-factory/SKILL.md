@@ -95,7 +95,11 @@ Save `./youtube-factory-output/<slug>/script.md`. Present it, confirm via button
 
 ## STAGE 3 — Visuals (image every 5–7s, then animate the opener)
 
-Send the banner. **Learn any model before first use** with `kie_fetch_model_docs`.
+Send the banner. **Learn any model before first use** with `kie_fetch_model_docs`, and
+load the model guide once: `kie_workflow_file("generate-anything", "references/models.md")`
+— durations, reference inputs, multishot, audio. For a recurring on-screen character use
+**Ideogram Character** (same reference across every still); voiceover via **ElevenLabs**
+(chunk scripts >5000 chars, `timestamps:true` to sync captions).
 
 **1. Break the script into shots.** One image per **5–7 seconds** of narration —
 each shot's prompt derived from what the voiceover is saying at that moment. A

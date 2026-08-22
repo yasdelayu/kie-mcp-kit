@@ -182,6 +182,10 @@ kie_post /api/v1/jobs/createTask
             "generate_audio":[true for ASMR/VO, false for a clean plate] } }
 ```
 
+> 📖 **Load the model guide before generating:**
+> `kie_workflow_file("generate-anything", "references/models.md")` — exact durations,
+> reference inputs, multishot and audio per model. Don't guess payloads.
+
 Format-specific routing:
 - **Entertainment / ASMR:** Seedance i2v. ASMR → `generate_audio:true`, close-up
   handling prompt (pour, cap-unscrew, condensation), no VO.
@@ -190,6 +194,16 @@ Format-specific routing:
   For real talking-head, route to **Veo 3.1** (`veo3`, its own `/api/v1/veo/generate`
   envelope — fetch docs) or keep it non-verbal (reaction/sip, caption carries the line).
   State the model swap in the price line.
+- **Clip-montage / multi-shot look (Guy-Ritchie style):** don't render N tiny clips and
+  cut later — full **Seedance 2.0** (`bytedance/seedance-2`) holds several cuts in one
+  4–15s render. Write a storyboard: `"Total 10s, 9:16, N shots. Shot 1: … Shot 2: …"`,
+  reuse the SAME product/character reference across shots to hold identity, add a Suno
+  `instrumental:true` bed. (Mini caps at 720p / no 4K — use full for the hero cut.)
+
+**Product reference (do this, don't describe it in text):** the registered product photo
+is a hosted URL. Feed it as the actual reference — GPT-Image i2i `input_urls` for the
+still, or Seedance `reference_image_urls` (up to 9) / `first_frame_url` for the video.
+A given Seedance call is EITHER `first_frame_url` OR `reference_image_urls`, not both.
 
 ### Batch gates
 Process one format at a time in order 1→5. Before each batch, one `AskUserQuestion`:
