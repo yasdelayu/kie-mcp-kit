@@ -6,7 +6,7 @@
 
 **Let your AI agent generate images, video, music and speech right in the chat — on the latest models.**
 
-Seedance · Kling · Veo · Sora 2 · GPT-Image-2 · Nano Banana · Flux · Suno · ElevenLabs — plus anything new KIE ships.
+Seedance · Kling · Veo · GPT-Image-2 · Nano Banana · Flux · Suno · ElevenLabs — plus anything new KIE ships.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![KIE.ai](https://img.shields.io/badge/powered%20by-KIE.ai-black.svg)](https://kie.ai)
