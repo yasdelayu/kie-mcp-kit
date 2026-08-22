@@ -266,6 +266,16 @@ rm -rf ~/.claude/skills/{generate-anything,content-factory,youtube-factory}
 
 ---
 
+## Поддержать
+
+Если кит экономит тебе время — можешь закинуть автору:
+
+- **USDT (TRC-20):** `TWVSReEvpN4fqDQHMPzmo5zM4ij9iB44CH` → [посмотреть на Tronscan](https://tronscan.org/#/address/TWVSReEvpN4fqDQHMPzmo5zM4ij9iB44CH)
+
+> ⚠️ **Только сеть TRC-20 (TRON)** — USDT в другой сети потеряется. Донат идёт на этот open-source кит, не в KIE.ai и не вендорам моделей.
+
+---
+
 ## Кредиты и лицензия
 
 - 🔌 **Коннектор** — [@yasdelayu](https://github.com/yasdelayu), собственная реализация 5-тулзового MCP поверх [KIE.ai API](https://docs.kie.ai). MIT.

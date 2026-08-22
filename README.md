@@ -266,6 +266,16 @@ rm -rf ~/.claude/skills/{generate-anything,content-factory,youtube-factory}
 
 ---
 
+## Support
+
+If this kit saves you time, you can tip the author:
+
+- **USDT (TRC-20):** `TWVSReEvpN4fqDQHMPzmo5zM4ij9iB44CH` → [view on Tronscan](https://tronscan.org/#/address/TWVSReEvpN4fqDQHMPzmo5zM4ij9iB44CH)
+
+> ⚠️ **TRC-20 (TRON) network only** — sending USDT on any other network will lose the funds. Tips support this open-source kit; they don't go to KIE.ai or the model vendors.
+
+---
+
 ## Credits & license
 
 - 🔌 **Connector** — [@yasdelayu](https://github.com/yasdelayu), an original 5-tool MCP implementation over the [KIE.ai API](https://docs.kie.ai). MIT.
