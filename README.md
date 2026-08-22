@@ -183,6 +183,11 @@ Analyze this channel and make a faceless video on the best untapped idea. (paste
 
 Stages: research the niche/competitors → write a narration script → generate one image every 5–7s and **animate the opening shots** (static-only AI videos get suppressed by YouTube) → voice it with ElevenLabs → package an assembly kit + overlay graphics ready for an editor.
 
+> **Works in any MCP client, not just Claude Code.** The skills are also embedded in the
+> connector: in a plain Claude Desktop chat, claude.ai, or Cursor — where file-based skills
+> don't load — the agent calls `kie_workflows` to pull the same instructions and run the
+> pipeline. In Claude Code the file skills auto-trigger; elsewhere the tool carries them.
+
 Output lands in `./youtube-factory-output/<slug>/`.
 
 ---
@@ -210,6 +215,8 @@ The kit works on its own, but `youtube-factory` gets better with a YouTube-resea
 | `kie_get(path)` | GET — **poll** status (`/api/v1/jobs/recordInfo?taskId=…`) or check balance. |
 | `kie_upload_file(localPath, uploadPath?)` | Local media file → KIE-hosted URL (~3 days) for `@Image`/`@Video` references. |
 | `kie_download(url, destPath, preview?)` | Save a result to disk (creates folders; media-only). For an image it also returns a small **inline preview** so it shows in the chat — `preview:false` to skip (batches). |
+| `kie_workflows(workflow?)` | List the bundled workflows, or load one's full instructions. Works in **any** MCP client — no file-based skill needed. |
+| `kie_workflow_file(workflow, path)` | Read a reference file a workflow points to (e.g. the prompt library). |
 | `kie_fetch_model_docs(path\|url, force?)` | A model's live docs from docs.kie.ai (cached ~3 days). |
 | resource `kie://models` | Live KIE model catalog — the starting point when the job isn't a default. |
 

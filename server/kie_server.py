@@ -265,6 +265,54 @@ def kie_fetch_model_docs(path: str | None = None, url: str | None = None, force:
     return {"ok": True, "url": resolved, "cached": False, "content": r.text}
 
 
+# --- workflows: ship the skills inside the server, Higgsfield-style ----------
+# Skills live as files under skill/, which only Claude Code (and agent mode)
+# loads. Exposing them as a tool makes the same instructions reachable from ANY
+# MCP client — a plain Desktop chat, claude.ai, Cursor — via a tool call.
+_SKILL_ROOT = Path(__file__).resolve().parent.parent / "skill"
+_WORKFLOWS = {
+    "generate-anything": "A single image / video / music / speech asset on command.",
+    "content-factory": "Bulk UGC product ads — 5 stages: research → plan → generate → schedule → cost report.",
+    "youtube-factory": "Faceless YouTube videos — research → script → visuals → voiceover → assembly.",
+}
+
+
+@mcp.tool()
+def kie_workflows(workflow: str | None = None) -> str:
+    """Load a bundled KIE workflow — a SKILL.md that orchestrates the kie_* tools.
+
+    MUST USE before building any multi-step or bulk content: a content campaign,
+    a batch of UGC ads / reels, a faceless YouTube video, an image asset pack —
+    or when the user says "content factory" / "контент-завод". Call with NO
+    argument to list the workflows; call with a name to load its full
+    instructions, then follow them. A single one-off asset doesn't need this —
+    use kie_post / kie_get directly.
+    """
+    if not workflow:
+        lines = ["KIE workflows — call kie_workflows('<name>') to load one:"]
+        lines += [f"- {n}: {d}" for n, d in _WORKFLOWS.items()]
+        return "\n".join(lines)
+    name = workflow.strip().strip("/")
+    _require(name in _WORKFLOWS, f"Unknown workflow {name!r}. Options: {', '.join(_WORKFLOWS)}.")
+    md = _SKILL_ROOT / name / "SKILL.md"
+    _require(md.is_file(), f"Workflow {name!r} has no SKILL.md next to the server.")
+    return md.read_text("utf-8")
+
+
+@mcp.tool()
+def kie_workflow_file(workflow: str, path: str) -> str:
+    """Read a reference file a workflow's SKILL.md points to (e.g. content-factory's
+    'references/prompt-library.md'). Text only, confined to the workflow folder."""
+    name = workflow.strip().strip("/")
+    _require(name in _WORKFLOWS, f"Unknown workflow {name!r}. Options: {', '.join(_WORKFLOWS)}.")
+    root = (_SKILL_ROOT / name).resolve()
+    target = (root / path).resolve()
+    _require(root == target or root in target.parents, "Blocked: path escapes the workflow folder.")
+    _require(target.is_file() and target.suffix.lower() in {".md", ".txt"},
+             "Only .md / .txt reference files can be read.")
+    return target.read_text("utf-8")
+
+
 @mcp.resource("kie://models")
 def models_index() -> str:
     """Live catalog of KIE.ai models, fetched from docs.kie.ai — the starting
@@ -329,6 +377,16 @@ def _selftest() -> None:
     thumb = _thumbnail(big.getvalue())
     assert thumb and thumb[:4] == b"RIFF" and len(thumb) <= _PREVIEW_MAX_BYTES, "preview budget"
     assert _thumbnail(b"not an image") is None
+
+    # Embedded workflows: listing names them; each loads; junk and traversal are refused
+    listing = kie_workflows()
+    assert all(n in listing for n in _WORKFLOWS), "workflow listing"
+    for name in _WORKFLOWS:
+        assert kie_workflows(name).lstrip().startswith("---"), f"{name} SKILL.md frontmatter"
+    _rejects(kie_workflows, "nope")
+    assert "concept seeds" in kie_workflow_file("content-factory", "references/prompt-library.md").lower()
+    _rejects(kie_workflow_file, "content-factory", "../../server/kie_server.py")
+    _rejects(kie_workflow_file, "content-factory", "SKILL.md/../../../etc/hosts")
     print("selftest ok")
 
 
