@@ -102,7 +102,32 @@ The full slug list is at the bottom — you can call **any** of them, not just t
 | InfiniTalk | `infinitalk/from-audio` | `image_url` ×1 | `audio_url` | `prompt` mandatory |
 | Volcengine lip-sync | `volcengine/video-to-video-lip-sync` | **existing video** `video_url` | `audio_url` | re-syncs footage; `separate_vocal` |
 | Wan 2.5 i2v | `wan/2-5-image-to-video` | `image_url` ×1 | dialogue text | talking avatar from a still |
-| Gemini Omni | `gemini-omni-character`→`gemini-omni-video` | register identity once → reuse | generative | reusable characterId + audio_ids |
+| Gemini Omni | `gemini-omni-character`→`gemini-omni-video` | register identity once → reuse | generative | reusable characterId + audio_ids (see recipe below) |
+
+### Gemini Omni — talking-head reel recipe (one creator across scenes)
+
+When one "creator" must persist across a multi-scene talking-head reel, Gemini Omni
+beats Kling/Wan lip-sync (reusable identity + native multishot). Production pattern:
+
+1. **Register the identity ONCE** → `gemini-omni-character` (text `descriptions` + 1 image [+ audio]) → `characterId`. An **original** character or one you have consent to use — not a real third party's face.
+2. **Voice** → `gemini-omni-audio` → `audio_id`.
+3. **Each scene** → `gemini-omni-video`:
+   ```json
+   {"model":"gemini-omni-video","input":{
+     "prompt":"[persona] in [location]; [camera move]; speaks in [lang]: \"<line>\". End on a wide shot.",
+     "character_ids":["<characterId>"], "audio_ids":["<audio_id>"],
+     "seed":<FIXED>, "aspect_ratio":"9:16", "duration":"10",
+     "image_url":"<prev_last_frame>", "image_urls":["<prev_last_frame>","<product_url>"]}}
+   ```
+4. **Continuity chain (the key trick):** after each scene, extract its **last frame**
+   (ffmpeg) → `kie_upload_file` → pass as `image_url` of the NEXT scene. Stops the
+   character/scene jumping between cuts.
+5. **Fixed `seed` across all scenes** — stabilizes voice + face.
+6. **Product image from scene 2 onward** (not the intro), via `image_urls`.
+7. Concatenate scenes with ffmpeg → final reel.
+
+Per-scene prompt shape: *persona + location + one camera move + the spoken line in
+quotes + "end on a wide shot"* (so the last frame stitches to the next scene).
 
 ---
 

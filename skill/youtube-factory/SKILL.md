@@ -99,7 +99,9 @@ Send the banner. **Learn any model before first use** with `kie_fetch_model_docs
 load the model guide once: `kie_workflow_file("generate-anything", "references/models.md")`
 — durations, reference inputs, multishot, audio. For a recurring on-screen character use
 **Ideogram Character** (same reference across every still); voiceover via **ElevenLabs**
-(chunk scripts >5000 chars, `timestamps:true` to sync captions).
+(chunk scripts >5000 chars, `timestamps:true` to sync captions). For a **talking on-camera
+host** that persists across scenes, use the **Gemini Omni reel recipe** (reusable
+`characterId`+`audio_id`, last-frame chaining, fixed seed — see the models guide).
 
 **1. Break the script into shots.** One image per **5–7 seconds** of narration —
 each shot's prompt derived from what the voiceover is saying at that moment. A

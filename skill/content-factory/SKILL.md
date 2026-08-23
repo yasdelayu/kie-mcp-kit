@@ -190,10 +190,12 @@ Format-specific routing:
 - **Entertainment / ASMR:** Seedance i2v. ASMR → `generate_audio:true`, close-up
   handling prompt (pour, cap-unscrew, condensation), no VO.
 - **Unboxing:** still of hands + packaging → Seedance i2v, audio on.
-- **Street Interview / Product Review (talking):** KIE image→video lip-sync is weak.
-  For real talking-head, route to **Veo 3.1** (`veo3`, its own `/api/v1/veo/generate`
-  envelope — fetch docs) or keep it non-verbal (reaction/sip, caption carries the line).
-  State the model swap in the price line.
+- **Street Interview / Product Review (talking):** basic KIE image→video lip-sync is weak.
+  For real talking-head, route to **Veo 3.1** (`veo3`, `/api/v1/veo/generate`), or — when
+  ONE creator must persist across several scenes — use the **Gemini Omni reel recipe**
+  (register `characterId` + `audio_id` once, chain last-frames, fixed seed; see
+  `kie_workflow_file("generate-anything","references/models.md")`). Otherwise keep it
+  non-verbal (reaction/sip, caption carries the line). State the model swap in the price line.
 - **Clip-montage / multi-shot look (Guy-Ritchie style):** don't render N tiny clips and
   cut later — full **Seedance 2.0** (`bytedance/seedance-2`) holds several cuts in one
   4–15s render. Write a storyboard: `"Total 10s, 9:16, N shots. Shot 1: … Shot 2: …"`,
