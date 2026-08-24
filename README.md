@@ -104,6 +104,8 @@ Add this to the client's MCP config (Claude Desktop: **Settings → Developer �
 ```
 
 Use an **absolute** path to `kie_server.py`. Fully quit and reopen the app afterward.
+
+**No `uv`? Prefer drag-and-drop?** There's a **Node build** (`server-js/`) that runs on plain Node ≥18 and packages as a `.mcpb` — grab `kie-mcp-kit.mcpb` from the [latest release](https://github.com/yasdelayu/kie-mcp-kit/releases) and drop it onto Claude Desktop, or `npx kie-mcp-kit-connector`. Same 7 tools, same behavior.
 </details>
 
 ### Step 3 — install the skills (only if you set up the connector manually)

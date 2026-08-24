@@ -1,0 +1,5 @@
+build/
+*.mcpb
+build-mcpb.mjs
+_*.mjs
+node_modules/

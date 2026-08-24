@@ -3,16 +3,29 @@
   "version": "1.0.0",
   "description": "KIE.ai MCP connector (Node) — 5 generic tools + workflow/reference tools over the KIE API",
   "type": "module",
-  "bin": { "kie-mcp-kit": "kie_server.mjs" },
+  "bin": {
+    "kie-mcp-kit": "kie_server.mjs"
+  },
+  "files": ["kie_server.mjs", "skill"],
   "scripts": {
     "start": "node kie_server.mjs",
-    "selftest": "node kie_server.mjs --selftest"
+    "selftest": "node kie_server.mjs --selftest",
+    "build:mcpb": "node build-mcpb.mjs",
+    "prepack": "rm -rf skill && cp -R ../skill skill",
+    "postpack": "rm -rf skill"
   },
+  "repository": { "type": "git", "url": "git+https://github.com/yasdelayu/kie-mcp-kit.git" },
+  "homepage": "https://github.com/yasdelayu/kie-mcp-kit#readme",
   "license": "MIT",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "jimp": "^1.6.0",
     "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }

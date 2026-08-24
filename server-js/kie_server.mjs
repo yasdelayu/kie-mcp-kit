@@ -29,7 +29,13 @@ const DOCS_BASE = (process.env.KIE_DOCS_BASE ?? "https://docs.kie.ai").replace(/
 const ws = () => (process.env.KIE_WORKSPACE_DIR ?? "").trim();   // read live (selftest mutates it)
 const CACHE_DIR = path.join(homedir(), ".cache", "kie-mcp-kit", "docs");
 const DOCS_TTL_MS = 3 * 24 * 3600 * 1000;
-const SKILL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "skill");
+const SKILL_ROOT = (() => {                      // repo (../skill) or bundled/npm (./skill)
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  for (const c of [path.resolve(here, "..", "skill"), path.resolve(here, "skill")]) {
+    try { if (statSync(c).isDirectory()) return c; } catch {}
+  }
+  return path.resolve(here, "..", "skill");
+})();
 
 const originOf = (u) => { const p = new URL(u); return `${p.protocol}//${p.host}`; };
 

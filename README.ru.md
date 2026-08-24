@@ -104,6 +104,8 @@ codex mcp add kie \
 ```
 
 Путь к `kie_server.py` — **абсолютный**. После правки полностью закрой и открой приложение.
+
+**Нет `uv`? Хочешь drag-and-drop?** Есть **Node-сборка** (`server-js/`) на голом Node ≥18, пакуется в `.mcpb` — возьми `kie-mcp-kit.mcpb` из [релиза](https://github.com/yasdelayu/kie-mcp-kit/releases) и перетащи в Claude Desktop, либо `npx kie-mcp-kit-connector`. Те же 7 тулзов, то же поведение.
 </details>
 
 ### Шаг 3 — поставить скиллы (если коннектор ставил вручную)
